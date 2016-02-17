@@ -4,6 +4,7 @@
  */
 
 var ql      = {}
+var fs      = require('fs');
 var Promise = require('bluebird');
 var _       = require('underscore');
 var colors  = require('colors');
@@ -14,15 +15,17 @@ Promise.longStackTraces = true;
 
 /**
  * Create a new agent with given predefined actionset
+ * @param {String} name of the agent file to save or load
  * @param {Array} list of actions (string)
  * @param {Function} state generator function
  * @param {Function} function that determines the reward of a state
  * @param {Function} action cost function
  */
-ql.newAgent = function(actionset,stateGenerator,rewardOfState,actionCost){
+ql.newAgent = function(name,actionset,stateGenerator,rewardOfState,actionCost){
 	var agent = {}
 	agent.actionset = actionset;
 	agent.func = {
+		name: name,
 		stateGenerator: stateGenerator, //*NOTE: State generator will return a promise
 		rewardOfState: rewardOfState,
 		actionCost: actionCost
@@ -31,15 +34,16 @@ ql.newAgent = function(actionset,stateGenerator,rewardOfState,actionCost){
 	return Promise.resolve(agent)
 }
 
-ql.saveAgent = function(path){
-	return function(agent){
-		fs.writeFile(path,agent);
-		return Promise.resolve(agent)
-	}
+ql.saveAgent = function(agent){
+	fs.writeFile(`${agent.name}.agent`,JSON.stringify(agent));
+	return Promise.resolve(agent);
 }
 
 ql.loadAgent = function(path){
 	fs.readFile(path,function(err,agent){
+
+		agent = JSON.parse(agent);
+
 		if (err) return Promise.reject(err);
 		else Promise.resolve(agent);
 	})
@@ -154,6 +158,7 @@ ql.step = function(state,stopCrit,alpha){
 		// End up at a terminal state?
 		if (stopCrit(state)){
 			// Finish!
+			ql.isVerbose && console.log('FINISH!'.green);
 			return Promise.resolve(agent);
 		}
 
@@ -194,7 +199,8 @@ ql.step = function(state,stopCrit,alpha){
 
 				return agent
 			})
-			.then((agent)=> ql.step(nextState,stopCrit,alpha)(agent))
+			.then(ql.saveAgent)
+			.then((agent) => ql.step(nextState,stopCrit,alpha)(agent))
 			.catch((e) => {
 				console.error('FATAL '.red + e.message);
 				console.error(e.stack);
