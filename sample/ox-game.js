@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * Q-EXP
  * Sample test script
@@ -5,9 +7,9 @@
 
 var colors = require('colors');
 var prompt = require('prompt');
-var qexp = require('../main.js');
+var ql = require('../main.js');
 
-qexp.isVerbose = true;
+ql.isVerbose = true;
 
 
 /*-----------------
@@ -110,5 +112,10 @@ var actionSet = [
 var alpha = 0.5;
 
 
-var game = qexp.newAgent(actionSet,stateGen,rewardOfState,actionCost)
-	.then(gexp.start(initState,stopCrit,alpha))
+var game = ql.newAgent(actionSet,stateGen,rewardOfState,actionCost)
+	.then(ql.start(initState,stopCrit,alpha))
+
+
+
+
+	
