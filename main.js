@@ -151,6 +151,9 @@ ql.step = function(state,stopCrit,alpha){
 
 		ql.isVerbose && console.log('...');
 
+		// TAODEBUG:
+		console.log('state :' + JSON.stringify(state))
+
 		// End up at a terminal state?
 		if (stopCrit(state)){
 			// Finish!
@@ -171,7 +174,6 @@ ql.step = function(state,stopCrit,alpha){
 		var nextState = null;
 		return agent.func['stateGenerator'](state,chosen.action)
 			.then(function(next){
-
 				nextState = next;
 				var nextReward = agent.func['rewardOfState'](nextState);
 				
@@ -194,7 +196,7 @@ ql.step = function(state,stopCrit,alpha){
 
 				return agent
 			})
-			.then(ql.step(nextState,stopCrit,alpha))
+			.then((agent)=> ql.step(nextState,stopCrit,alpha)(agent))
 			.catch((e) => {
 				console.error('FATAL '.red + e.message);
 				console.error(e.stack);

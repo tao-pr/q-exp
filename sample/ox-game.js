@@ -91,6 +91,7 @@ var actionCost = function(state,a){
 }
 
 var stopCrit = function(state){
+
 	state = strToState(state);
 
 	// Still there are some vacant cells?
