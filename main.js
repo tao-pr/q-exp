@@ -10,6 +10,7 @@ var colors  = require('colors');
 var config  = require('./package.json');
 
 ql.isVerbose = true;
+Promise.longStackTraces = true;
 
 /**
  * Create a new agent with given predefined actionset
@@ -105,7 +106,7 @@ ql.__q = function(state,action){
 		else{
 			// We don't know anything about the current state
 			// Guess it based on uniform distribution then
-			return agent.func['actionCost'](state,a)
+			return agent.func['actionCost'](state,action)
 		}
 	}
 }
@@ -119,7 +120,7 @@ ql.__exploreNext = function(state){
 		// List all actions and try
 		var rewards = agent.actionset.map(function(a){
 			// Predict the reward we would get
-			return {action: a, reward: ql.__q(state,a)}
+			return {action: a, reward: ql.__q(state,a)(agent)}
 		})
 
 		// Sort the actions by rewards (higher first)
@@ -135,7 +136,7 @@ ql.__exploreNext = function(state){
 ql.start = function(initState,stopCrit,alpha){
 	return function(agent){
 		ql.isVerbose && console.log('Starting...'.cyan);
-		return ql.step(initState,stopCrit,alpha=0.01)
+		return ql.step(initState,stopCrit,alpha=0.01)(agent)
 	}
 }
 
@@ -148,6 +149,8 @@ ql.start = function(initState,stopCrit,alpha){
 ql.step = function(state,stopCrit,alpha){
 	return function(agent){
 
+		ql.isVerbose && console.log('...');
+
 		// End up at a terminal state?
 		if (stopCrit(state)){
 			// Finish!
@@ -155,17 +158,22 @@ ql.step = function(state,stopCrit,alpha){
 		}
 
 		// Explore the next states
-		var nexts = ql.__exploreNext(initState);
+		var nexts = ql.__exploreNext(state)(agent);
+
+		ql.isVerbose && console.log('generated actions:'.yellow);
+		ql.isVerbose && console.log(nexts);
 		
 		// Pick the best action (greedy tithering)
 		var chosen = nexts[0]; // TAOTODO: We may rely on other choices
-		var currentReward = ql.func['rewardOfState'](state);
+		var currentReward = agent.func['rewardOfState'](state);
 
 		// Generate the next state
-		return agent.func['stateGenerator'](state,chose.action)
-			.then(function(nextState){
+		var nextState = null;
+		return agent.func['stateGenerator'](state,chosen.action)
+			.then(function(next){
 
-				var nextReward = ql.func['rewardOfState'](nextState);
+				nextState = next;
+				var nextReward = agent.func['rewardOfState'](nextState);
 				
 				// Update the state such that
 				// Q(s, a) += alpha * (reward(s,a) + max(Q(s') - Q(s,a))
@@ -187,6 +195,10 @@ ql.step = function(state,stopCrit,alpha){
 				return agent
 			})
 			.then(ql.step(nextState,stopCrit,alpha))
+			.catch((e) => {
+				console.error('FATAL '.red + e.message);
+				console.error(e.stack);
+			})
 	}
 }
 
