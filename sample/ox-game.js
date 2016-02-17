@@ -3,6 +3,8 @@
  * Sample test script
  */
 
+var colors = require('colors');
+var prompt = require('prompt');
 var qexp = require('../main.js');
 
 qexp.isVerbose = true;
@@ -21,13 +23,49 @@ qexp.isVerbose = true;
 var stateToStr = (s) => JSON.stringify(s);
 var strToState = (s) => JSON.parse(s);
 
+function applyAction(state,i,j,c){
+	state[j][i] = c;
+	return state;
+}
+
 var stateGen = function(s,a){
 	// Get which cell to fill
 	var action = a.match(/c(\d)(\d)/);
-	var cell = [action[1],action[2]];
+	var i = action[1];
+	var j = action[2];
 
 	var state = strToState(s);
 
+	// Display the current state
+	console.log('[PREVIOUS BOARD]'.green);
+	state.forEach((row) => console.log(row))
+
+	// Apply the agent's move
+	state = applyAction(state,i,j,'X'.red);
+	console.log('[APPLY] '.green + a);
+	console.log('[AFTER BOT MOVE]'.green);
+	state.forEach((row) => console.log(row))
+
+	// Ask the user to input their choice
+	prompt.start();
+	return new Promise((done,reject)=>
+
+		prompt.get(['move'],(err,res)=>{
+			// TAOTODO: valid move?
+
+			// Apply the move
+			let action = res.move.match(/c(\d)(\d)/);
+			let i = action[1];
+			let j = action[2];
+			state = applyAction(state,i,j,'O');
+
+			console.log('[AFTER YOUR MOVE]'.green);
+			state.forEach((row) => console.log(row));
+
+			// Returns the generated state
+			done(stateToStr(state))
+		})
+	);
 }
 var rewardOfState = function(state){
 	state = strToState(state);

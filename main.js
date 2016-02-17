@@ -22,7 +22,7 @@ ql.newAgent = function(actionset,stateGenerator,rewardOfState,actionCost){
 	var agent = {}
 	agent.actionset = actionset;
 	agent.func = {
-		stateGenerator: stateGenerator,
+		stateGenerator: stateGenerator, //*NOTE: State generator will return a promise
 		rewardOfState: rewardOfState,
 		actionCost: actionCost
 	};
@@ -160,27 +160,33 @@ ql.step = function(state,stopCrit,alpha){
 		// Pick the best action (greedy tithering)
 		var chosen = nexts[0]; // TAOTODO: We may rely on other choices
 		var currentReward = ql.func['rewardOfState'](state);
-		var nextState = agent.func['stateGenerator'](state,chose.action);
-		var nextReward = ql.func['rewardOfState'](nextState);
-		
-		// Update the state such that
-		// Q(s, a) += alpha * (reward(s,a) + max(Q(s') - Q(s,a))
-		// where
-		// s  : current state
-		// s' : next state
-		var qdiff = alpha * (chosen.reward + nextReward - currentReward);
-		ql.__updatePolicy(
-			state,
-			chosen.action,
-			(r)=>{ r + qdiff },
-			initReward=Math.random()
-		);
 
-		isVerbose && console.log('Stepping... '.cyan)
-		isVerbose && console.log(`   ${nextState} : ${chosen.action}`)
+		// Generate the next state
+		return agent.func['stateGenerator'](state,chose.action)
+			.then(function(nextState){
 
-		// Proceed to the next step
-		return Promise.resolve(ql.step(nextState,stopCrit,alpha))
+				var nextReward = ql.func['rewardOfState'](nextState);
+				
+				// Update the state such that
+				// Q(s, a) += alpha * (reward(s,a) + max(Q(s') - Q(s,a))
+				// where
+				// s  : current state
+				// s' : next state
+				var qdiff = alpha * (chosen.reward + nextReward - currentReward);
+				ql.__updatePolicy(
+					state,
+					chosen.action,
+					(r)=>{ r + qdiff },
+					initReward=Math.random()
+				);
+
+				ql.isVerbose && console.log('Stepping... '.cyan)
+				ql.isVerbose && console.log(`   next state = ${nextState}`)
+				ql.isVerbose && console.log(`   chosen act = ${chosen.action}`)
+
+				return agent
+			})
+			.then(ql.step(nextState,stopCrit,alpha))
 	}
 }
 
