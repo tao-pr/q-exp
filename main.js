@@ -11,10 +11,17 @@ var config  = require('./package.json');
 
 /**
  * Create a new agent with given predefined actionset
+ * @param {Array} list of actions (string)
+ * @param {Function} state generator function
+ * @param {Function} function that determines the reward of a state
  */
-ql.newAgent = function(actionset){
+ql.newAgent = function(actionset,stateGenerator,rewardOfState){
 	var agent = {}
 	agent.actionset = actionset;
+	agent.func = {
+		stateGenerator: stateGenerator,
+		rewardOfState: rewardOfState
+	};
 	agent.policy = {}
 	return Promise.resolve(agent)
 }
@@ -48,13 +55,42 @@ ql.updatePolicy = function(state,action,rewardUpdater){
 		return Promise.resolve(agent)
 	}
 }
+
+
+
 /**
- * Predict the reward of the next state after applying an action
+ * Explore the reward of the next state after applying an action
+ * @param {String} current state
+ * @param {String} action to take
  */
-ql.q = function(state,action){
-	// Check whether the state exists?
-	if (agent.policy.hasOwnProperty(state))
-		return 
+ql.rewardOf = function(state,action){
+
+	return function(agent){
+		// Explore the next state
+		var state_ = agent.func['stateGenerator'](state,action);
+		// Get the reward of the next state
+		var reward_state = agent.func['rewardOfState'](state);
+		return reward_state;
+	}
 }
+
+
+/**
+ * Explore the subsequent states by trying some actions on it
+ */
+ql.exploreNext = function(state){
+	return function(agent){
+		// List all actions and try
+		var rewards = agent.actionset.map(function(a){
+			var r = ql.rewardOf(state,a)(agent);
+			return {action: a, reward: r}
+		})
+
+		// Sort the actions by rewards (higher first)
+		return _.sortBy(rewards,(r) => -r.reward);
+	}
+}
+
+
 
 module.exports = ql;
