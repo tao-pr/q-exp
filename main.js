@@ -23,9 +23,9 @@ Promise.longStackTraces = true;
  */
 ql.newAgent = function(name,actionset,stateGenerator,rewardOfState,actionCost){
 	var agent = {}
+	agent.name = name;
 	agent.actionset = actionset;
 	agent.func = {
-		name: name,
 		stateGenerator: stateGenerator, //*NOTE: State generator will return a promise
 		rewardOfState: rewardOfState,
 		actionCost: actionCost
