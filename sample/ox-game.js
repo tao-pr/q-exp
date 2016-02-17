@@ -57,13 +57,19 @@ var stopCrit = function(state){
 }
 
 // Initial variables
-var initState = 
+var initState = stateToStr([
+		[0,0,0],
+		[0,0,0],
+		[0,0,0]
+	])
 
 var actionSet = [
 	'c00','c10','c20',
 	'c01','c11','c21',
 	'c02','c12','c22'
 ];
+
+var alpha = 0.5;
 
 
 var game = qexp.newAgent(actionSet,stateGen,rewardOfState,actionCost)
