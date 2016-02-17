@@ -9,18 +9,22 @@ var _       = require('underscore');
 var colors  = require('colors');
 var config  = require('./package.json');
 
+ql.isVerbose = true;
+
 /**
  * Create a new agent with given predefined actionset
  * @param {Array} list of actions (string)
  * @param {Function} state generator function
  * @param {Function} function that determines the reward of a state
+ * @param {Function} action cost function
  */
-ql.newAgent = function(actionset,stateGenerator,rewardOfState){
+ql.newAgent = function(actionset,stateGenerator,rewardOfState,actionCost){
 	var agent = {}
 	agent.actionset = actionset;
 	agent.func = {
 		stateGenerator: stateGenerator,
-		rewardOfState: rewardOfState
+		rewardOfState: rewardOfState,
+		actionCost: actionCost
 	};
 	agent.policy = {}
 	return Promise.resolve(agent)
@@ -83,14 +87,14 @@ ql.__q = function(state,action){
 			// Yes, we have the state memorised
 			var _act = (agent.policy[state].filter((a) => a.action==action));
 			if (_act.length==0)
-				return Math.random(); // Don't know anything about the action
+				return agent.func['actionCost'](state,a);
 			else
 				return _act[0].reward;
 		}
 		else{
 			// We don't know anything about the current state
 			// Guess it based on uniform distribution then
-			return Math.random();
+			return agent.func['actionCost'](state,a)
 		}
 	}
 }
@@ -119,6 +123,7 @@ ql.__exploreNext = function(state){
  */
 ql.start = function(initState,stopCrit,alpha){
 	return function(agent){
+		ql.isVerbose && console.log('Starting...'.cyan);
 		return ql.step(initState,stopCrit,alpha=0.01)
 	}
 }
@@ -144,7 +149,7 @@ ql.step = function(state,stopCrit,alpha){
 		// Pick the best action (greedy tithering)
 		var chosen = nexts[0]; // TAOTODO: We may rely on other choices
 		var currentReward = ql.func['rewardOfState'](state);
-		var nextState = agent.func['stateGenerator'](state);
+		var nextState = agent.func['stateGenerator'](state,chose.action);
 		var nextReward = ql.func['rewardOfState'](nextState);
 		
 		// Update the state such that
@@ -159,6 +164,9 @@ ql.step = function(state,stopCrit,alpha){
 			(r)=>{ r + qdiff },
 			initReward=Math.random()
 		);
+
+		isVerbose && console.log('Stepping... '.cyan)
+		isVerbose && console.log(`   ${nextState} : ${chosen.action}`)
 
 		// Proceed to the next step
 		return Promise.resolve(ql.step(nextState,stopCrit,alpha))
