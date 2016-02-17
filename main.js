@@ -151,9 +151,6 @@ ql.step = function(state,stopCrit,alpha){
 
 		ql.isVerbose && console.log('...');
 
-		// TAODEBUG:
-		console.log('state :' + JSON.stringify(state))
-
 		// End up at a terminal state?
 		if (stopCrit(state)){
 			// Finish!
@@ -193,6 +190,7 @@ ql.step = function(state,stopCrit,alpha){
 				ql.isVerbose && console.log('Stepping... '.cyan)
 				ql.isVerbose && console.log(`   next state = ${nextState}`)
 				ql.isVerbose && console.log(`   chosen act = ${chosen.action}`)
+				ql.isVerbose && console.log(`   rewarded   = ${qdiff}`)
 
 				return agent
 			})
