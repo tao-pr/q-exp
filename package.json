@@ -18,5 +18,10 @@
     "exploitation"
   ],
   "author": "StarColon Projects",
-  "license": "Apache 2.0"
+  "license": "Apache 2.0",
+  "dependencies": {
+    "bluebird": "^3.3.1",
+    "colors": "^1.1.2",
+    "underscore": "^1.8.3"
+  }
 }
