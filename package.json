@@ -1,0 +1,22 @@
+{
+  "name": "q-exp",
+  "version": "0.0.0",
+  "description": "Q-learning :exploration-exploitation library",
+  "main": "main.js",
+  "scripts": {
+    "test": "mocha "
+  },
+  "keywords": [
+    "reinforcement",
+    "machine",
+    "learning",
+    "rl",
+    "ml",
+    "q",
+    "learning",
+    "exploration",
+    "exploitation"
+  ],
+  "author": "StarColon Projects",
+  "license": "Apache 2.0"
+}
