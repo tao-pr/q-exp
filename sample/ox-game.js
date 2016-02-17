@@ -43,7 +43,7 @@ var stateGen = function(s,a){
 	state.forEach((row) => console.log(row))
 
 	// Apply the agent's move
-	state = applyAction(state,i,j,'X'.red);
+	state = applyAction(state,i,j,'X');
 	console.log('[APPLY] '.green + a);
 	console.log('[AFTER BOT MOVE]'.green);
 	state.forEach((row) => console.log(row))
@@ -92,6 +92,7 @@ var actionCost = function(state,a){
 
 var stopCrit = function(state){
 	state = strToState(state);
+
 	// Still there are some vacant cells?
 	return !state.some((row) => row.indexOf(0)>=0)
 }
@@ -118,4 +119,3 @@ var game = ql.newAgent(actionSet,stateGen,rewardOfState,actionCost)
 
 
 
-	
