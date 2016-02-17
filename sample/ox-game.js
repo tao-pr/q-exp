@@ -43,7 +43,7 @@ var stateGen = function(s,a){
 	state.forEach((row) => console.log(row))
 
 	// Apply the agent's move
-	state = applyAction(state,i,j,'X');
+	state = applyAction(state,i,j,'❌');
 	console.log('[APPLY] '.green + a);
 	console.log('[AFTER BOT MOVE]'.green);
 	state.forEach((row) => console.log(row))
@@ -59,7 +59,7 @@ var stateGen = function(s,a){
 			let action = res.move.match(/c(\d)(\d)/);
 			let i = action[1];
 			let j = action[2];
-			state = applyAction(state,i,j,'O');
+			state = applyAction(state,i,j,'✅');
 
 			console.log('[AFTER YOUR MOVE]'.green);
 			state.forEach((row) => console.log(row));
@@ -71,7 +71,39 @@ var stateGen = function(s,a){
 }
 var rewardOfState = function(state){
 	state = strToState(state);
+	var stateT = state.map((row,j) =>  // Transposed state
+		row.map((col,i) => state[i][j])
+	)
 
+	function twoConsecutive(row,c){
+		var s = row.join('').replace(c,1);
+		return s=='110'||s=='101'||s=='011';
+	}
+
+	function closeToWin(_state,_stateT,c){
+		if (_state.some((row) => twoConsecutive(row,c)))
+			return true;
+		if (_stateT.some((row) => twoConsecutive(row,c)))
+			return true;
+		if (_state[0][0]==c && _state[1][1]==c && _state[2][2]==0)
+			return true;
+		if (_state[0][0]==c && _state[1][1]==0 && _state[2][2]==c)
+			return true;
+		if (_state[0][0]==0 && _state[1][1]==c && _state[2][2]==c)
+			return true;
+		else return false;
+	}
+
+	// The agent is close to win?
+	if (closeToWin(state,stateT,'❌'))
+		return 0.88;
+
+	// The opponent is close to win?
+	if (closeToWin(state,stateT,'✅'))
+		return 0.0;
+
+	// Otherwise, random
+	return Math.random()
 }
 
 var actionCost = function(state,a){
