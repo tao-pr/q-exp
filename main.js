@@ -30,8 +30,19 @@ ql.newAgent = function(actionset,stateGenerator,rewardOfState,actionCost){
 	return Promise.resolve(agent)
 }
 
-ql.saveAgent = function(path){}
-ql.loadAgent = function(path){}
+ql.saveAgent = function(path){
+	return function(agent){
+		fs.writeFile(path,agent);
+		return Promise.resolve(agent)
+	}
+}
+
+ql.loadAgent = function(path){
+	fs.readFile(path,function(err,agent){
+		if (err) return Promise.reject(err);
+		else Promise.resolve(agent);
+	})
+}
 
 /**
  * Update the policy from the observation
