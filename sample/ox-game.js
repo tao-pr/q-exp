@@ -151,8 +151,12 @@ var actionSet = [
 var alpha = 0.5;
 
 
-var game = ql.newAgent(actionSet,stateGen,rewardOfState,actionCost)
+var game = ql
+	.newAgent('ox-agent',actionSet,stateGen,rewardOfState,actionCost)
 	.then(ql.start(initState,stopCrit,alpha))
+	.then(function(agent){
+		console.log('--TRAINED AGENT--'.cyan);
+	})
 
 
 
