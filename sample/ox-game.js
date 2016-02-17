@@ -30,6 +30,12 @@ function applyAction(state,i,j,c){
 	return state;
 }
 
+function drawState(state){
+	state.map((row) => {
+		console.log(row.map((c) => c==0 ? ' ' : c))
+	})
+}
+
 var stateGen = function(s,a){
 	// Get which cell to fill
 	var action = a.match(/c(\d)(\d)/);
@@ -40,13 +46,13 @@ var stateGen = function(s,a){
 
 	// Display the current state
 	console.log('[PREVIOUS BOARD]'.green);
-	state.forEach((row) => console.log(row))
+	drawState(state);
 
 	// Apply the agent's move
 	state = applyAction(state,i,j,'❌');
 	console.log('[APPLY] '.green + a);
 	console.log('[AFTER BOT MOVE]'.green);
-	state.forEach((row) => console.log(row))
+	drawState(state);
 
 	// Ask the user to input their choice
 	prompt.start();
@@ -62,7 +68,7 @@ var stateGen = function(s,a){
 			state = applyAction(state,i,j,'✅');
 
 			console.log('[AFTER YOUR MOVE]'.green);
-			state.forEach((row) => console.log(row));
+			drawState(state);
 
 			// Returns the generated state
 			done(stateToStr(state))
@@ -77,7 +83,7 @@ var rewardOfState = function(state){
 
 	function twoConsecutive(row,c){
 		var s = row.join('').replace(c,1);
-		return s=='110'||s=='101'||s=='011';
+		return s=='110'||s=='101'||s=='011'||s=='111';
 	}
 
 	function closeToWin(_state,_stateT,c){
@@ -85,13 +91,12 @@ var rewardOfState = function(state){
 			return true;
 		if (_stateT.some((row) => twoConsecutive(row,c)))
 			return true;
-		if (_state[0][0]==c && _state[1][1]==c && _state[2][2]==0)
-			return true;
-		if (_state[0][0]==c && _state[1][1]==0 && _state[2][2]==c)
-			return true;
-		if (_state[0][0]==0 && _state[1][1]==c && _state[2][2]==c)
-			return true;
-		else return false;
+
+		var diag = [_state[0][0],_state[1][1],_state[2][2]];
+
+		if (twoConsecutive(diag)) return true;
+
+		return false;
 	}
 
 	// The agent is close to win?
