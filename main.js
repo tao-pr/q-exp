@@ -205,11 +205,10 @@ ql.step = function(state,stopCrit,alpha){
 				// where
 				// s  : current state
 				// s' : next state
-				var qdiff = alpha * (chosen.reward + nextReward - currentReward);
 				ql.__updatePolicy(
 					state,
 					chosen.action,
-					(r)=>{ r + qdiff },
+					(r)=>{ r + alpha * (nextReward - r) },
 					initReward=Math.random()
 				)(agent);
 
@@ -218,7 +217,6 @@ ql.step = function(state,stopCrit,alpha){
 				ql.isVerbose && console.log(`   next state = ${nextState}`)
 				ql.isVerbose && console.log(`   chosen act = ${chosen.action}`)
 				ql.isVerbose && console.log(`   reward     = ${nextReward}`)
-				ql.isVerbose && console.log(`   updated    = ${qdiff}`)
 				return agent
 			})
 			.then((agent) => ql.step(nextState,stopCrit,alpha)(agent))

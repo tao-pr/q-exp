@@ -56,8 +56,8 @@ var stateGen = function(s,a){
 
 	// Bot won?
 	if (stopCrit(stateToStr(state))){
-		console.log('[BOT WON!]'.green);
-		return done(stateToStr(state));
+		console.log('[BOT ENDED THE GAME]'.green);
+		return Promise.resolve(stateToStr(state));
 	}
 
 	// Ask the user to input their choice
@@ -78,7 +78,7 @@ var stateGen = function(s,a){
 
 			// Human won?
 			if (stopCrit(stateToStr(state))){
-				console.log('[HUMAN WON]!'.green);
+				console.log('[HUMAN ENDED THE GAME]!'.green);
 			}
 
 			// Returns the generated state
