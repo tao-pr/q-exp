@@ -39,7 +39,7 @@ ql.newAgent = function(name,actionset,stateGenerator,rewardOfState,actionCost){
  */
 ql.save = function(path){
 	return function(agent){
-		fs.writeFile(`${agent.name}.agent`,JSON.stringify(agent.policy));
+		fs.writeFile(`${path}/${agent.name}.agent`,JSON.stringify(agent.policy));
 		return Promise.resolve(agent);
 	}
 }
@@ -50,14 +50,19 @@ ql.save = function(path){
 ql.load = function(path){
 	return function(agent){
 		return new Promise((done,reject) => {
-			fs.readFile(path + agent.name + '.agent',function(err,policy){
+			fs.readFile(`${path}/${agent.name}.agent`,function(err,policy){
 				if (err) {
 					console.error('Unable to load agent'.red);
+					console.error(err);
 					return done(agent);
 				}
 
 				policy = JSON.parse(policy);
 				agent.policy = policy;
+
+				ql.isVerbose && console.log('AGENT LOADED'.cyan);
+				ql.isVerbose && console.log(agent.policy)
+
 				done(agent)
 			})
 		})
