@@ -70,6 +70,21 @@ ql.load = function(path){
 }
 
 /**
+ * Illustrate the policy it learned
+ */
+ql.revealBrain = function(agent){
+	if (Object.keys(agent.policy).length==0)
+		return agent;
+
+	console.log('[BRAIN SCAN]'.green)
+	Object.keys(agent.policy).forEach(function(state){
+		console.log(state);
+		console.log(`   most probable action: ${agent.policy[state][0].action} (${agent.policy[state][0].reward})`)
+	})
+	return agent;
+}
+
+/**
  * Update the policy from the observation
  * @param {Array} state
  * @param {String} action
@@ -209,7 +224,7 @@ ql.step = function(state,stopCrit,alpha){
 					state,
 					chosen.action,
 					(r)=>{ r + alpha * (nextReward - r) },
-					initReward=Math.random()
+					initReward=Math.random()/3 // Least confidence of (0~0.33)
 				)(agent);
 
 				ql.isVerbose && console.log('Proceeded... '.cyan)
