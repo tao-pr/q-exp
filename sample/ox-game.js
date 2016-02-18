@@ -55,9 +55,9 @@ var stateGen = function(s,a){
 	drawState(state);
 
 	// Bot won?
-	if (stopCrit(state)){
+	if (stopCrit(stateToStr(state))){
 		console.log('[BOT WON!]'.green);
-		return stateToStr(state);
+		return done(stateToStr(state));
 	}
 
 	// Ask the user to input their choice
@@ -77,7 +77,7 @@ var stateGen = function(s,a){
 			drawState(state);
 
 			// Human won?
-			if (stopCrit(state)){
+			if (stopCrit(stateToStr(state))){
 				console.log('[HUMAN WON]!'.green);
 			}
 
@@ -145,7 +145,7 @@ var stopCrit = function(state){
 	// Somebody won?
 	var cost = rewardOfState(state)
 	console.log(` cost of current state = ${cost}`);
-	if (Math.abs(cost)==1) return true;
+	if (Math.abs(cost)>1) return true;
 	
 	// Still there any space to move?
 	if (state.indexOf('0')>0) return false;
