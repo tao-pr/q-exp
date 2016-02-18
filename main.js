@@ -98,7 +98,7 @@ ql.__updatePolicy = function(state,action,rewardUpdater,initial){
 			agent.policy[state] = {}
 			agent.policy[state] = agent.actionset.map(function(a){
 				// TAOTOREVIEW: This could possibly apply prior knowledge
-				return {action: a, reward: initial}
+				return {action: a, reward: a==action ? initial : Math.random()/3}
 			})
 		}
 		else{
@@ -108,6 +108,10 @@ ql.__updatePolicy = function(state,action,rewardUpdater,initial){
 				else return a.reward
 			})
 		}
+
+		// Resort the policy (higher reward comes first)
+		agent.policy[state] = _.sortBy(agent.policy[state],(s)=>-s.reward);
+
 		return Promise.resolve(agent)
 	}
 }
@@ -224,7 +228,7 @@ ql.step = function(state,stopCrit,alpha){
 					state,
 					chosen.action,
 					(r)=>{ r + alpha * (nextReward - r) },
-					initReward=Math.random()/3 // Least confidence of (0~0.33)
+					initReward=nextReward
 				)(agent);
 
 				ql.isVerbose && console.log('Proceeded... '.cyan)
