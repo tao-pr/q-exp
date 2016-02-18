@@ -238,24 +238,18 @@ ql.step = function(state,stopCrit,alpha,history){
 					initReward=nextReward
 				)(agent);
 
-				// Update the previous states if this cost penalty
-				for (var n=history.length-1; n>=0; n--){
-					// TAODEBUG:
-					console.log(agent.policy[history[n].state].filter((a)=>a.action==history[n].action)[0].reward)
-
-					console.log(' decay '.blue + JSON.stringify(history[n]));
-
+				// Update the previous state too
+				if (history.length>0){
+					var recent = _.last(history);
+					var recentReward = agent.func['rewardOfState'](recent.state);
 					ql.__updatePolicy(
-						history[n].state,
-						history[n].action,
-						(r)=>r*Math.pow(0.90,history.length-n),
-						initReward=null // Actually no changes
+						recent.state,
+						recent.action,
+						(r)=>r + Math.pow(alpha,2) * nextReward-recentReward,
+						initReward=recentReward
 					)(agent);
-
-					// TAODEBUG:
-					console.log(agent.policy[history[n].state].filter((a)=>a.action==history[n].action)[0].reward)
 				}
-
+				
 				// Register the history
 				ql.isVerbose && console.log(`History recorded: ${chosen.action}`)
 				history.push({action: chosen.action, state: state});

@@ -171,7 +171,6 @@ var alpha = 0.5;
 var game = ql
 	.newAgent('ox-agent',actionSet,stateGen,rewardOfState,actionCost)
 	.then(ql.load('.'))
-	.then(ql.revealBrain)
 	.then(ql.start(initState,stopCrit,alpha))
 	.then(ql.save('.'))
 	.then((agent) =>
