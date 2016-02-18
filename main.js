@@ -34,19 +34,34 @@ ql.newAgent = function(name,actionset,stateGenerator,rewardOfState,actionCost){
 	return Promise.resolve(agent)
 }
 
-ql.saveAgent = function(agent){
-	fs.writeFile(`${agent.name}.agent`,JSON.stringify(agent));
-	return Promise.resolve(agent);
+/**
+ * Save the learned policy to a physical file
+ */
+ql.save = function(path){
+	return function(agent){
+		fs.writeFile(`${agent.name}.agent`,JSON.stringify(agent.policy));
+		return Promise.resolve(agent);
+	}
 }
 
-ql.loadAgent = function(path){
-	fs.readFile(path,function(err,agent){
+/** 
+ * Load the policy from a physical file
+ */
+ql.load = function(path){
+	return function(agent){
+		return new Promise((done,reject) => {
+			fs.readFile(path + agent.name + '.agent',function(err,policy){
+				if (err) {
+					console.error('Unable to load agent'.red);
+					return done(agent);
+				}
 
-		agent = JSON.parse(agent);
-
-		if (err) return Promise.reject(err);
-		else Promise.resolve(agent);
-	})
+				policy = JSON.parse(policy);
+				agent.policy = policy;
+				done(agent)
+			})
+		})
+	}
 }
 
 /**
@@ -190,7 +205,7 @@ ql.step = function(state,stopCrit,alpha){
 					chosen.action,
 					(r)=>{ r + qdiff },
 					initReward=Math.random()
-				);
+				)(agent);
 
 				ql.isVerbose && console.log('Stepping... '.cyan)
 				ql.isVerbose && console.log(`   next state = ${nextState}`)
@@ -199,7 +214,6 @@ ql.step = function(state,stopCrit,alpha){
 
 				return agent
 			})
-			.then(ql.saveAgent)
 			.then((agent) => ql.step(nextState,stopCrit,alpha)(agent))
 			.catch((e) => {
 				console.error('FATAL '.red + e.message);
