@@ -81,12 +81,14 @@ var rewardOfState = function(state){
 		row.map((col,i) => state[i][j])
 	)
 
-	function twoConsecutive(row,c){
-		var s = row.join('').replace(c,1);
-		return s=='110'||s=='101'||s=='011'||s=='111';
-	}
-
+	
 	function closeToWin(_state,_stateT,c){
+
+		function twoConsecutive(row,c){
+			var s = row.join('').replace(c,1);
+			return s=='110'||s=='101'||s=='011';
+		}
+
 		if (_state.some((row) => twoConsecutive(row,c)))
 			return true;
 		if (_stateT.some((row) => twoConsecutive(row,c)))
@@ -99,6 +101,15 @@ var rewardOfState = function(state){
 		return false;
 	}
 
+	function won(_state,c){
+		function threeConsecutive(row,c){
+			var s = row.join('').replace(c,1);
+			return s=='111';
+		}
+		var diag = [_state[0][0],_state[1][1],_state[2][2]];
+		return threeConsecutive(_state,c) || threeConsecutive(diag,c);
+	}
+
 	// The agent is close to win?
 	if (closeToWin(state,stateT,'❌'))
 		return 0.88;
@@ -106,6 +117,14 @@ var rewardOfState = function(state){
 	// The opponent is close to win?
 	if (closeToWin(state,stateT,'✅'))
 		return 0.0;
+
+	// Agent win?
+	if (won(state,'❌'))
+		return 1;
+
+	// Opponent won?
+	if (won(state,'✅'))
+		return -1;
 
 	// Otherwise, random
 	return Math.random()
@@ -129,10 +148,16 @@ var actionCost = function(state,a){
 
 var stopCrit = function(state){
 
-	state = strToState(state);
+	// Somebody won?
+	var cost = rewardOfState(state)
+	if (Math.abs(cost)==1) return true;
+	
+	// Still there any space to move?
+	
+	console.log(state);
 
-	// Still there are some vacant cells?
-	return !state.some((row) => row.indexOf(0)>=0)
+	if (state.indexOf('0')>0) return false;
+	else return true;
 }
 
 // Initial variables
@@ -156,9 +181,9 @@ var game = ql
 	.then(ql.load('.'))
 	.then(ql.start(initState,stopCrit,alpha))
 	.then(ql.save('.'))
-	.then(function(agent){
-		console.log('--TRAINED AGENT--'.cyan);
-	})
+	.then((agent) =>
+		console.log('--TRAINED AGENT--'.cyan)
+	)
 
 
 
