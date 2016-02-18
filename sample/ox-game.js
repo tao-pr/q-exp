@@ -150,12 +150,10 @@ var stopCrit = function(state){
 
 	// Somebody won?
 	var cost = rewardOfState(state)
+	console.log(` cost of current state = ${cost}`);
 	if (Math.abs(cost)==1) return true;
 	
 	// Still there any space to move?
-	
-	console.log(state);
-
 	if (state.indexOf('0')>0) return false;
 	else return true;
 }
