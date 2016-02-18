@@ -137,6 +137,10 @@ ql.__rewardOf = function(state){
 ql.__q = function(state,action){
 	
 	return function(agent){
+		var cost = agent.func['actionCost'](state,action);
+		if (cost<0)
+			return cost;
+
 		// Do we have the state and action registered in the policy?
 		if (agent.policy.hasOwnProperty(state)){
 			// Yes, we have the state memorised
@@ -149,7 +153,7 @@ ql.__q = function(state,action){
 		else{
 			// We don't know anything about the current state
 			// Guess it based on uniform distribution then
-			return agent.func['actionCost'](state,action)
+			return cost;
 		}
 	}
 }
@@ -179,7 +183,7 @@ ql.__exploreNext = function(state){
 ql.start = function(initState,stopCrit,alpha){
 	return function(agent){
 		ql.isVerbose && console.log('Starting...'.cyan);
-		return ql.step(initState,stopCrit,alpha=0.01)(agent)
+		return ql.step(initState,stopCrit,alpha=0.66)(agent)
 	}
 }
 
