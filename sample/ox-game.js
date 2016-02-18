@@ -112,16 +112,16 @@ var rewardOfState = function(state){
 	}
 
 	// Agent win?
-	if (anyWin(rows,'❌')) return 1.5;
+	if (anyWin(rows,'❌')) return 1;
 	// Human win?
-	if (anyWin(rows,'✅')) return -1.5;
+	if (anyWin(rows,'✅')) return -1;
 	// Agent close to win?
-	if (anyCloseToWin(rows,'❌')) return 0.9;
+	if (anyCloseToWin(rows,'❌')) return 0.8;
 	// Human close to win?
-	if (anyCloseToWin(rows,'✅')) return -0.9;
+	if (anyCloseToWin(rows,'✅')) return -0.8;
 
-	// Otherwise, random at minimal confidence (0~0.5)
-	return Math.random()/2;
+	// Otherwise, random at minimal confidence (0~0.1)
+	return Math.random()/10;
 }
 
 var actionCost = function(state,a){
@@ -135,9 +135,9 @@ var actionCost = function(state,a){
 	var j = action[2];
 
 	if (state[j][i]==0)
-		return Math.random();
+		return Math.random()/10;
 	else
-		return -1;
+		return -Infinity;
 }
 
 var stopCrit = function(state){
@@ -145,7 +145,7 @@ var stopCrit = function(state){
 	// Somebody won?
 	var cost = rewardOfState(state)
 	console.log(` cost of current state = ${cost}`);
-	if (Math.abs(cost)>1) return true;
+	if (Math.abs(cost)>=1) return true;
 	
 	// Still there any space to move?
 	if (state.indexOf('0')>0) return false;
