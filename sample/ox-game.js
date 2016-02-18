@@ -54,6 +54,12 @@ var stateGen = function(s,a){
 	console.log('[AFTER BOT MOVE]'.green);
 	drawState(state);
 
+	// Bot won?
+	if (stopCrit(state)){
+		console.log('[BOT WON!]'.green);
+		return stateToStr(state);
+	}
+
 	// Ask the user to input their choice
 	prompt.start();
 	return new Promise((done,reject)=>
@@ -69,6 +75,11 @@ var stateGen = function(s,a){
 
 			console.log('[AFTER YOUR MOVE]'.green);
 			drawState(state);
+
+			// Human won?
+			if (stopCrit(state)){
+				console.log('[HUMAN WON]!'.green);
+			}
 
 			// Returns the generated state
 			done(stateToStr(state))

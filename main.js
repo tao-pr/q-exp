@@ -164,6 +164,7 @@ ql.start = function(initState,stopCrit,alpha){
 	}
 }
 
+
 /**
  * Step to explore the next state
  * @param {String} current state
@@ -212,7 +213,7 @@ ql.step = function(state,stopCrit,alpha){
 					initReward=Math.random()
 				)(agent);
 
-				ql.isVerbose && console.log('Stepping... '.cyan)
+				ql.isVerbose && console.log('Proceeded... '.cyan)
 				ql.isVerbose && console.log(`   next state = ${nextState}`)
 				ql.isVerbose && console.log(`   chosen act = ${chosen.action}`)
 				ql.isVerbose && console.log(`   rewarded   = ${qdiff}`)
