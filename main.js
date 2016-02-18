@@ -211,7 +211,6 @@ ql.step = function(state,stopCrit,alpha){
 				ql.isVerbose && console.log(`   next state = ${nextState}`)
 				ql.isVerbose && console.log(`   chosen act = ${chosen.action}`)
 				ql.isVerbose && console.log(`   rewarded   = ${qdiff}`)
-
 				return agent
 			})
 			.then((agent) => ql.step(nextState,stopCrit,alpha)(agent))
