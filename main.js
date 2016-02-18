@@ -103,9 +103,10 @@ ql.__updatePolicy = function(state,action,rewardUpdater,initial){
 		}
 		else{
 			// State exists, update the action reward
-			agent.policy[state].map(function(a){
-				if (a.action==action) return rewardUpdater(a.reward);
-				else return a.reward
+			agent.policy[state] = agent.policy[state].map(function(a){
+				if (a.action==action) 
+					return {action: action, reward: rewardUpdater(a.reward)};
+				else return {action:a.action, reward: a.reward}
 			})
 		}
 
@@ -238,16 +239,25 @@ ql.step = function(state,stopCrit,alpha,history){
 				)(agent);
 
 				// Update the previous states if this cost penalty
-				for (var n=history.length-1; n>0; n--){
+				for (var n=history.length-1; n>=0; n--){
+					// TAODEBUG:
+					console.log(agent.policy[history[n].state].filter((a)=>a.action==history[n].action)[0].reward)
+
+					console.log(' decay '.blue + JSON.stringify(history[n]));
+
 					ql.__updatePolicy(
 						history[n].state,
-						history[n].action.action,
-						(r)=>r*Math.pow(0.92,history.length-n),
-						initReward=history[n].action.reward // Actually no changes
-					)
+						history[n].action,
+						(r)=>r*Math.pow(0.90,history.length-n),
+						initReward=null // Actually no changes
+					)(agent);
+
+					// TAODEBUG:
+					console.log(agent.policy[history[n].state].filter((a)=>a.action==history[n].action)[0].reward)
 				}
 
 				// Register the history
+				ql.isVerbose && console.log(`History recorded: ${chosen.action}`)
 				history.push({action: chosen.action, state: state});
 
 				ql.isVerbose && console.log('Proceeded... '.cyan)
