@@ -238,10 +238,14 @@ ql.step = function(state,stopCrit,alpha,history){
 					initReward=nextReward
 				)(agent);
 
-				// Update the previous state too
+				// Update the immediate previous state too
 				if (history.length>0){
 					var recent = _.last(history);
 					var recentReward = agent.func['rewardOfState'](recent.state);
+
+					var diff = Math.pow(alpha,2) * nextReward-recentReward;
+					ql.isVerbose && console.log('    Weaken action: '.blue + recent.action + ' ' + diff);
+
 					ql.__updatePolicy(
 						recent.state,
 						recent.action,
