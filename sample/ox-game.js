@@ -62,7 +62,7 @@ var stateGen = function(s,a){
 			// TAOTODO: valid move?
 
 			// Apply the move
-			let action = res.move.match(/c(\d)(\d)/);
+			let action = res.move.match(/c*(\d)(\d)/);
 			let i = action[1];
 			let j = action[2];
 			state = applyAction(state,i,j,'✅');
@@ -77,57 +77,40 @@ var stateGen = function(s,a){
 }
 var rewardOfState = function(state){
 	state = strToState(state);
-	var stateT = state.map((row,j) =>  // Transposed state
-		row.map((col,i) => state[i][j])
-	)
-
 	
-	function closeToWin(_state,_stateT,c){
+	// Reward = 1 if win
+	// Reward = -1 if lose
+	// Reward is higher if more close to win
+	var rows = state.map((row) => row.join(''));
+	var rowsT = state.map((row,j) => row.map((c,i)=>state[i][j]).join(''));
+	var diag = state.map((row,j) => row.map((c,i)=> i==j ? c : '').join('')).join('');
+	var diagT = state.map((row,j) => row.map((c,i)=> row.length-i-1==j ? c : '').join('')).join('');
 
-		function twoConsecutive(row,c){
-			var s = row.join('').replace(c,1);
-			return s=='110'||s=='101'||s=='011';
-		}
+	rows = rows.concat(rowsT);
+	rows = rows.concat(diag);
+	rows = rows.concat(diagT);
 
-		if (_state.some((row) => twoConsecutive(row,c)))
-			return true;
-		if (_stateT.some((row) => twoConsecutive(row,c)))
-			return true;
-
-		var diag = [_state[0][0],_state[1][1],_state[2][2]];
-
-		if (twoConsecutive(diag)) return true;
-
-		return false;
+	function anyWin(_rows,c){
+		return _rows.some((row) => row.split('').filter((a) => a!=c).length==0);
 	}
-
-	function won(_state,c){
-		function threeConsecutive(row,c){
-			var s = row.join('').replace(c,1);
-			return s=='111';
-		}
-		var diag = [_state[0][0],_state[1][1],_state[2][2]];
-		return threeConsecutive(_state,c) || threeConsecutive(diag,c);
+	function anyCloseToWin(_rows,c){
+		return _rows.some((row) => 
+			row.split('').filter((a)=>a==c).length==row.length-1 &&
+			row.indexOf('0')>=0
+		)
 	}
-
-	// The agent is close to win?
-	if (closeToWin(state,stateT,'❌'))
-		return 0.88;
-
-	// The opponent is close to win?
-	if (closeToWin(state,stateT,'✅'))
-		return 0.0;
 
 	// Agent win?
-	if (won(state,'❌'))
-		return 1;
+	if (anyWin(rows,'❌')) return 1.5;
+	// Human win?
+	if (anyWin(rows,'✅')) return -1.5;
+	// Agent close to win?
+	if (anyCloseToWin(rows,'❌')) return 0.9;
+	// Human close to win?
+	if (anyCloseToWin(rows,'✅')) return -0.9;
 
-	// Opponent won?
-	if (won(state,'✅'))
-		return -1;
-
-	// Otherwise, random
-	return Math.random()
+	// Otherwise, random at minimal confidence (0~0.5)
+	return Math.random()/2;
 }
 
 var actionCost = function(state,a){
