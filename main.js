@@ -88,24 +88,23 @@ ql.revealBrain = function(agent){
  * Update the policy from the observation
  * @param {Array} state
  * @param {String} action
- * @param {Function} reward updater function
- * @param {Number} initial reward if new state-action to store
+ * @param {Number} learning rate
+ * @param {Number} reward value
  */
-ql.__updatePolicy = function(state,action,rewardUpdater,initial){
+ql.__updatePolicy = function(state,action,alpha,reward){
 	return function(agent){
 		// Register a new state if haven't
 		if (!agent.policy.hasOwnProperty(state)){
 			agent.policy[state] = {}
 			agent.policy[state] = agent.actionset.map(function(a){
-				// TAOTOREVIEW: This could possibly apply prior knowledge
-				return {action: a, reward: a==action ? initial : Math.random()/3}
+				return {action: a, reward: a==action ? reward : 0}
 			})
 		}
 		else{
 			// State exists, update the action reward
 			agent.policy[state] = agent.policy[state].map(function(a){
 				if (a.action==action) 
-					return {action: action, reward: rewardUpdater(a.reward)};
+					return {action: action, reward: a.reward + (alpha*reward)};
 				else return {action:a.action, reward: a.reward}
 			})
 		}
@@ -234,19 +233,22 @@ ql.step = function(state,stopCrit,alpha,history){
 				ql.__updatePolicy(
 					state,
 					chosen.action,
-					(r)=>r + alpha * (nextReward - r),
-					initReward=nextReward
+					alpha,
+					nextReward
 				)(agent);
 
-				// Update the previous state too
+				// Update the immediate previous state too
 				if (history.length>0){
 					var recent = _.last(history);
 					var recentReward = agent.func['rewardOfState'](recent.state);
+
+					ql.isVerbose && console.log('    Weaken action: '.blue + recent.action + ' ' + recentReward);
+
 					ql.__updatePolicy(
 						recent.state,
 						recent.action,
-						(r)=>r + Math.pow(alpha,2) * nextReward-recentReward,
-						initReward=recentReward
+						alpha*alpha,
+						nextReward
 					)(agent);
 				}
 				
