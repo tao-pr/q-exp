@@ -183,7 +183,8 @@ ql.__exploreNext = function(state){
 ql.start = function(initState,stopCrit,alpha){
 	return function(agent){
 		ql.isVerbose && console.log('Starting...'.cyan);
-		return ql.step(initState,stopCrit,alpha=0.66)(agent)
+		var history = []
+		return ql.step(initState,stopCrit,alpha=0.66,history)(agent)
 	}
 }
 
@@ -192,9 +193,10 @@ ql.start = function(initState,stopCrit,alpha){
  * Step to explore the next state
  * @param {String} current state
  * @param {Function} stopping criteria function
- * @param {}
+ * @param {Number} learning rate
+ * @param {Array} list of the recent states and actions
  */
-ql.step = function(state,stopCrit,alpha){
+ql.step = function(state,stopCrit,alpha,history){
 	return function(agent){
 
 		ql.isVerbose && console.log('...');
@@ -231,9 +233,22 @@ ql.step = function(state,stopCrit,alpha){
 				ql.__updatePolicy(
 					state,
 					chosen.action,
-					(r)=>{ r + alpha * (nextReward - r) },
+					(r)=>r + alpha * (nextReward - r),
 					initReward=nextReward
 				)(agent);
+
+				// Update the previous states if this cost penalty
+				for (var n=history.length-1; n>0; n--){
+					ql.__updatePolicy(
+						history[n].state,
+						history[n].action.action,
+						(r)=>r*Math.pow(0.92,history.length-n),
+						initReward=history[n].action.reward // Actually no changes
+					)
+				}
+
+				// Register the history
+				history.push({action: chosen.action, state: state});
 
 				ql.isVerbose && console.log('Proceeded... '.cyan)
 				ql.isVerbose && console.log(`   prev state = ${state}`);
@@ -242,7 +257,7 @@ ql.step = function(state,stopCrit,alpha){
 				ql.isVerbose && console.log(`   reward     = ${nextReward}`)
 				return agent
 			})
-			.then((agent) => ql.step(nextState,stopCrit,alpha)(agent))
+			.then((agent) => ql.step(nextState,stopCrit,alpha,history)(agent))
 			.catch((e) => {
 				console.error('FATAL '.red + e.message);
 				console.error(e.stack);
