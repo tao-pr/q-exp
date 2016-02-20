@@ -69,64 +69,11 @@ ox.stateGen = function(myspot,opponentGen){
 	}
 }
 
+/**
+ * Ask human player to generate the next state
+ */
 ox.humanGenerateState = function(state){
 	return new Promise((done,reject)=>
-
-			prompt.get(['move'],(err,res)=>{
-				// TAOTODO: valid move?
-
-				// Apply the move
-				let action = res.move.match(/c*(\d)(\d)/);
-				let i = action[1];
-				let j = action[2];
-				// Human always uses green check as their move symbol
-				state = applyAction(state,i,j,'✅'); 
-
-				console.log('[AFTER YOUR MOVE]'.green);
-				drawState(state);
-
-				// Human won?
-				if (stopCrit(stateToStr(state))){
-					console.log('[YOU ENDED THE GAME]!'.green);
-				}
-
-				// Returns the generated state
-				done(stateToStr(state))
-			})
-		);
-}
-
-/**
- * Generate the next state, human involves
- */
-ox.stateGenVsHuman = function(s,a){
-	// Get which cell to fill
-	var action = a.match(/c(\d)(\d)/);
-	var i = action[1];
-	var j = action[2];
-
-	var state = strToState(s);
-
-	// Display the current state
-	console.log('[PREVIOUS BOARD]'.green);
-	drawState(state);
-
-	// Apply the agent's move
-	state = applyAction(state,i,j,'❌');
-	console.log('[APPLY] '.green + a);
-	console.log('[AFTER BOT MOVE]'.green);
-	drawState(state);
-
-	// Bot won?
-	if (stopCrit(stateToStr(state))){
-		console.log('[BOT ENDED THE GAME]'.green);
-		return Promise.resolve(stateToStr(state));
-	}
-
-	// Ask the user to input their choice
-	prompt.start();
-	return new Promise((done,reject)=>
-
 		prompt.get(['move'],(err,res)=>{
 			// TAOTODO: valid move?
 
@@ -134,14 +81,15 @@ ox.stateGenVsHuman = function(s,a){
 			let action = res.move.match(/c*(\d)(\d)/);
 			let i = action[1];
 			let j = action[2];
-			state = applyAction(state,i,j,'✅');
+			// Human always uses green check as their move symbol
+			state = applyAction(state,i,j,'✅'); 
 
 			console.log('[AFTER YOUR MOVE]'.green);
 			drawState(state);
 
 			// Human won?
 			if (stopCrit(stateToStr(state))){
-				console.log('[HUMAN ENDED THE GAME]!'.green);
+				console.log('[YOU ENDED THE GAME]!'.green);
 			}
 
 			// Returns the generated state
@@ -149,7 +97,6 @@ ox.stateGenVsHuman = function(s,a){
 		})
 	);
 }
-
 
 ox.rewardOfState = function(myspot,theirspot){	
 
@@ -236,8 +183,8 @@ var actionSet = [
 
 
 function botVsBot(){
-	var initAgent(name,me,they){
-		return ql.newAgent(`${name}.agent`,actionSet,rewardOfState(me,they),actionCost)
+	var initAgent(name,me,they,opponentMove){
+		return ql.newAgent(`${name}.agent`,actionSet,opponentMove,rewardOfState(me,they),actionCost)
 			.load('./agent');
 	}
 
@@ -248,14 +195,22 @@ function botVsBot(){
 	];
 
 	// Let two bots play each other!
-	// Bot1 starts
+	
 	var alpha = 0.33;
-	bots[0].then(function(bot){
+	var board = [
+		[0,0,0],
+		[0,0,0],
+		[0,0,0]
+	];
 
-	})	
+	// Bot1 starts the game
+	bots[0].then(
+		ql.start(board,stopCrit,alpha) // TAOTODO: Bind the opponent's state generator here
+	)
 
 }
 
+/*
 var alpha = 0.5;
 var game = ql
 	.newAgent('ox-agent',actionSet,stateGen,rewardOfState,actionCost)
@@ -267,5 +222,5 @@ var game = ql
 	)
 
 
-
+*/
 
