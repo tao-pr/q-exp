@@ -200,13 +200,11 @@ ql.__exploreNext = function(state){
 /**
  * Start a new learning course of the agent
  * @param {String} initial state
- * @param {Function} function to determine whether the state is terminal
  */
-ql.start = function(initState,stopCrit,alpha){
+ql.start = function(initState){
 	return function(agent){
 		ql.isVerbose && console.log('Starting...'.cyan);
-		var history = []
-		return ql.step(initState,stopCrit,alpha=0.66,history)(agent)
+		return ql.step(initState,opponentAct=null,history=[])(agent)
 	}
 }
 
@@ -214,17 +212,16 @@ ql.start = function(initState,stopCrit,alpha){
 /**
  * Step to explore the next state
  * @param {String} current state
- * @param {Function} stopping criteria function
- * @param {Number} learning rate
+ * @param {String} action taken by the opponent which introduced the current state
  * @param {Array} list of the recent states and actions
  */
-ql.step = function(state,stopCrit,alpha,history){
+ql.step = function(state,opponentAction,history){
 	return function(agent){
 
 		ql.isVerbose && console.log('...');
 
 		// End up at a terminal state?
-		if (stopCrit(state)){
+		if (agent.func['stopCrit'](state)){
 			// Finish!
 			ql.isVerbose && console.log('FINISH!'.green);
 			return Promise.resolve(agent);
@@ -257,12 +254,12 @@ ql.step = function(state,stopCrit,alpha,history){
 				ql.__updatePolicy(
 					state,
 					chosen.action,
-					alpha,
+					agent.alpha,
 					nextReward
 				)(agent);
 
 				// Update the immediate previous state too
-				if (history.length>0){
+				if (history && history.length>0){
 					var recent = _.last(history);
 					var recentReward = agent.func['rewardOfState'](recent.state);
 
@@ -271,7 +268,7 @@ ql.step = function(state,stopCrit,alpha,history){
 					ql.__updatePolicy(
 						recent.state,
 						recent.action,
-						alpha*alpha,
+						agent.alpha*agent.alpha,
 						nextReward
 					)(agent);
 				}
@@ -287,7 +284,7 @@ ql.step = function(state,stopCrit,alpha,history){
 				ql.isVerbose && console.log(`   reward     = ${nextReward}`)
 				return agent
 			})
-			.then((agent) => ql.step(nextState,stopCrit,alpha,history)(agent))
+			.then((agent) => ql.step(nextState,history)(agent))
 			.catch((e) => {
 				console.error('FATAL '.red + e.message);
 				console.error(e.stack);
