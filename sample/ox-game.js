@@ -189,17 +189,20 @@ function botVsBot(){
 	
 	// Prepare instances of two bots
 	let me, them;
-	var bot1 = ql.newAgent('oxbot',actionSet)
-		//.then(ql.bindStateGenerator(stateGen(me='❌',opponentMove)))
+	var bot1 = ql.newAgent('ox',actionSet)
+		.then(ql.bindStateGenerator(stateGen(me='❌',(state,action) => {
+			// Hand over to @bot2 to move
+			return bot2.then((bot) => ql.step(state,action,[]))
+		})))
 		.then(ql.bindRewardMeasure(rewardOfState(me='❌',them='✅')))
 		.then(ql.bindActionCostMeasure(actionCost))
 		.then(ql.bindStopCriteria(stopCrit(me='❌',them='✅')))
 		.load('./agent');
 
-	var bot2 = ql.newAgent('oxbot',actionSet)
+	var bot2 = ql.newAgent('ox',actionSet)
 		.then(ql.bindStateGenerator(stateGen(me='✅',(state,action) => {
-			// Ask the opponent to generate the next state
-			// TAOTODO:
+			// Hand over to @bot1 to move
+			return bot1.then((bot) => ql.step(state,action,[]))
 		})))
 		.then(ql.bindRewardMeasure(rewardOfState(me='✅',them='❌')))
 		.then(ql.bindActionCostMeasure(actionCost))
@@ -215,7 +218,7 @@ function botVsBot(){
 	];
 
 	// Bot1 starts the game
-	bots[0].then(ql.start(board,stopCrit,alpha)) // TAOTODO: StopCrit function depends on each player
+	bots[0].then(ql.start(board)) 
 		.then(ql.save('./agent'))
 		.then((agent) => console.log('AGENT HAS BEEN TRAINED!'.cyan))
 		.then(() => process.exit(0))
