@@ -36,7 +36,7 @@ var drawState = function(state){
 	})
 }
 
-var stateGen = function(myspot,opponentGen){
+var stateGen = function(myspot,opponentMove){
 
 	return function(s,a){
 		// Get which cell to fill
@@ -64,7 +64,7 @@ var stateGen = function(myspot,opponentGen){
 
 		// Ask the opponent to generate the next move
 		prompt.start();
-		return opponentGen(state);
+		return opponentMove(state);
 
 	}
 }
@@ -190,14 +190,17 @@ function botVsBot(){
 	// Prepare instances of two bots
 	let me, them;
 	var bot1 = ql.newAgent('oxbot',actionSet)
-		.then(ql.bindStateGenerator(stateGen(me='❌',opponentMove)))
+		//.then(ql.bindStateGenerator(stateGen(me='❌',opponentMove)))
 		.then(ql.bindRewardMeasure(rewardOfState(me='❌',them='✅')))
 		.then(ql.bindActionCostMeasure(actionCost))
 		.then(ql.bindStopCriteria(stopCrit(me='❌',them='✅')))
 		.load('./agent');
 
 	var bot2 = ql.newAgent('oxbot',actionSet)
-		.then(ql.bindStateGenerator(stateGen(me='✅',opponentMove)))
+		.then(ql.bindStateGenerator(stateGen(me='✅',(state,action) => {
+			// Ask the opponent to generate the next state
+			// TAOTODO:
+		})))
 		.then(ql.bindRewardMeasure(rewardOfState(me='✅',them='❌')))
 		.then(ql.bindActionCostMeasure(actionCost))
 		.then(ql.bindStopCriteria(stopCrit(me='✅',them='❌')))
