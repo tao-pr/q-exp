@@ -21,22 +21,85 @@ ql.isVerbose = true;
  *-----------------
 */
 
+var ox = {};
+ox.stateToStr = (s) => JSON.stringify(s);
+ox.strToState = (s) => JSON.parse(s);
 
-var stateToStr = (s) => JSON.stringify(s);
-var strToState = (s) => JSON.parse(s);
-
-function applyAction(state,i,j,c){
+ox.applyAction = function(state,i,j,c){
 	state[j][i] = c;
 	return state;
 }
 
-function drawState(state){
+ox.drawState = function(state){
 	state.map((row) => {
 		console.log(row.map((c) => c==0 ? ' ' : c))
 	})
 }
 
-var stateGen = function(s,a){
+ox.stateGen = function(myspot,opponentGen){
+
+	return function(s,a){
+		// Get which cell to fill
+		var action = a.match(/c(\d)(\d)/);
+		var i = action[1];
+		var j = action[2];
+
+		var state = strToState(s);
+
+		// Display the current state
+		console.log('[PREVIOUS BOARD]'.green);
+		drawState(state);
+
+		// Apply the agent's move
+		state = applyAction(state,i,j,myspot);
+		console.log('[APPLY] '.green + a);
+		console.log('[AFTER ' + myspot + ' MOVE]'.green);
+		drawState(state);
+
+		// Bot won?
+		if (stopCrit(stateToStr(state))){
+			console.log('[' + myspot + ' ENDED THE GAME]'.green);
+			return Promise.resolve(stateToStr(state));
+		}
+
+		// Ask the opponent to generate the next move
+		prompt.start();
+		return opponentGen(state);
+
+	}
+}
+
+ox.humanGenerateState = function(state){
+	return new Promise((done,reject)=>
+
+			prompt.get(['move'],(err,res)=>{
+				// TAOTODO: valid move?
+
+				// Apply the move
+				let action = res.move.match(/c*(\d)(\d)/);
+				let i = action[1];
+				let j = action[2];
+				// Human always uses green check as their move symbol
+				state = applyAction(state,i,j,'✅'); 
+
+				console.log('[AFTER YOUR MOVE]'.green);
+				drawState(state);
+
+				// Human won?
+				if (stopCrit(stateToStr(state))){
+					console.log('[YOU ENDED THE GAME]!'.green);
+				}
+
+				// Returns the generated state
+				done(stateToStr(state))
+			})
+		);
+}
+
+/**
+ * Generate the next state, human involves
+ */
+ox.stateGenVsHuman = function(s,a){
 	// Get which cell to fill
 	var action = a.match(/c(\d)(\d)/);
 	var i = action[1];
@@ -86,42 +149,47 @@ var stateGen = function(s,a){
 		})
 	);
 }
-var rewardOfState = function(state){
-	state = strToState(state);
-	
-	// Reward = 1 if win
-	// Reward = -1 if lose
-	// Reward is higher if more close to win
-	var rows = state.map((row) => row.join(''));
-	var rowsT = state.map((row,j) => row.map((c,i)=>state[i][j]).join(''));
-	var diag = state.map((row,j) => row.map((c,i)=> i==j ? c : '').join('')).join('');
-	var diagT = state.map((row,j) => row.map((c,i)=> row.length-i-1==j ? c : '').join('')).join('');
 
-	rows = rows.concat(rowsT);
-	rows = rows.concat(diag);
-	rows = rows.concat(diagT);
 
-	function anyWin(_rows,c){
-		return _rows.some((row) => row.split('').filter((a) => a!=c).length==0);
+ox.rewardOfState = function(myspot,theirspot){	
+
+	return function(state){
+		state = strToState(state);
+		
+		// Reward = 1 if win
+		// Reward = -1 if lose
+		// Reward is higher if more close to win
+		var rows = state.map((row) => row.join(''));
+		var rowsT = state.map((row,j) => row.map((c,i)=>state[i][j]).join(''));
+		var diag = state.map((row,j) => row.map((c,i)=> i==j ? c : '').join('')).join('');
+		var diagT = state.map((row,j) => row.map((c,i)=> row.length-i-1==j ? c : '').join('')).join('');
+
+		rows = rows.concat(rowsT);
+		rows = rows.concat(diag);
+		rows = rows.concat(diagT);
+
+		function anyWin(_rows,c){
+			return _rows.some((row) => row.split('').filter((a) => a!=c).length==0);
+		}
+		function anyCloseToWin(_rows,c){
+			return _rows.some((row) => 
+				row.split('').filter((a)=>a==c).length==row.length-1 &&
+				row.indexOf('0')>=0
+			)
+		}
+
+		// They win?
+		if (anyWin(rows,theirspot)) return 1;
+		// Me win?
+		if (anyWin(rows,myspot)) return -1;
+		// They are close to win?
+		if (anyCloseToWin(rows,theirspot)) return 0.8;
+		// Me close to win?
+		if (anyCloseToWin(rows,myspot)) return -0.8;
+
+		// Otherwise, random at minimal confidence (0~0.1)
+		return Math.random()/10;
 	}
-	function anyCloseToWin(_rows,c){
-		return _rows.some((row) => 
-			row.split('').filter((a)=>a==c).length==row.length-1 &&
-			row.indexOf('0')>=0
-		)
-	}
-
-	// Agent win?
-	if (anyWin(rows,'❌')) return 1;
-	// Human win?
-	if (anyWin(rows,'✅')) return -1;
-	// Agent close to win?
-	if (anyCloseToWin(rows,'❌')) return 0.8;
-	// Human close to win?
-	if (anyCloseToWin(rows,'✅')) return -0.8;
-
-	// Otherwise, random at minimal confidence (0~0.1)
-	return Math.random()/10;
 }
 
 var actionCost = function(state,a){
@@ -165,9 +233,30 @@ var actionSet = [
 	'c02','c12','c22'
 ];
 
+
+
+function botVsBot(){
+	var initAgent(name,me,they){
+		return ql.newAgent(`${name}.agent`,actionSet,rewardOfState(me,they),actionCost)
+			.load('./agent');
+	}
+
+	// Initialise two bots
+	var bots = [
+		initAgent('crossox','❌','✅'),
+		initAgent('checkox','✅','❌')
+	];
+
+	// Let two bots play each other!
+	// Bot1 starts
+	var alpha = 0.33;
+	bots[0].then(function(bot){
+
+	})	
+
+}
+
 var alpha = 0.5;
-
-
 var game = ql
 	.newAgent('ox-agent',actionSet,stateGen,rewardOfState,actionCost)
 	.then(ql.load('.'))
