@@ -25,18 +25,18 @@ var ox = {};
 ox.stateToStr = (s) => JSON.stringify(s);
 ox.strToState = (s) => JSON.parse(s);
 
-ox.applyAction = function(state,i,j,c){
+var applyAction = function(state,i,j,c){
 	state[j][i] = c;
 	return state;
 }
 
-ox.drawState = function(state){
+var drawState = function(state){
 	state.map((row) => {
 		console.log(row.map((c) => c==0 ? ' ' : c))
 	})
 }
 
-ox.stateGen = function(myspot,opponentGen){
+var stateGen = function(myspot,opponentGen){
 
 	return function(s,a){
 		// Get which cell to fill
@@ -72,7 +72,7 @@ ox.stateGen = function(myspot,opponentGen){
 /**
  * Ask human player to generate the next state
  */
-ox.humanGenerateState = function(state){
+var humanGenerateState = function(state){
 	return new Promise((done,reject)=>
 		prompt.get(['move'],(err,res)=>{
 			// TAOTODO: valid move?
@@ -98,7 +98,7 @@ ox.humanGenerateState = function(state){
 	);
 }
 
-ox.rewardOfState = function(myspot,theirspot){	
+var rewardOfState = function(myspot,theirspot){	
 
 	return function(state){
 		state = strToState(state);
@@ -155,16 +155,18 @@ var actionCost = function(state,a){
 		return -Infinity;
 }
 
-var stopCrit = function(state){
+var stopCrit = function(myspot,theirspot){
 
-	// Somebody won?
-	var cost = rewardOfState(state)
-	console.log(` cost of current state = ${cost}`);
-	if (Math.abs(cost)>=1) return true;
-	
-	// Still there any space to move?
-	if (state.indexOf('0')>0) return false;
-	else return true;
+	return function(state){
+		// Somebody won?
+		var cost = rewardOfState(myspot,theirspot)(state)
+		console.log(` cost of current state = ${cost}`);
+		if (Math.abs(cost)>=1) return true;
+		
+		// Still there any space to move?
+		if (state.indexOf('0')>0) return false;
+		else return true;
+	}
 }
 
 // Initial variables
@@ -181,21 +183,27 @@ var actionSet = [
 ];
 
 
-
+// Play against itself
+// but only the first bot will learn from its mistake
 function botVsBot(){
-	var initAgent(name,me,they,opponentMove){
-		return ql.newAgent(`${name}.agent`,actionSet,opponentMove,rewardOfState(me,they),actionCost)
-			.load('./agent');
-	}
-
-	// Initialise two bots
-	var bots = [
-		initAgent('crossox','❌','✅'),
-		initAgent('checkox','✅','❌')
-	];
-
-	// Let two bots play each other!
 	
+	// Prepare instances of two bots
+	let me, them;
+	var bot1 = ql.newAgent('oxbot',actionSet)
+		.then(ql.bindStateGenerator(stateGen(me='❌',opponentMove)))
+		.then(ql.bindRewardMeasure(rewardOfState(me='❌',them='✅')))
+		.then(ql.bindActionCostMeasure(actionCost))
+		.then(ql.bindStopCriteria(stopCrit(me='❌',them='✅')))
+		.load('./agent');
+
+	var bot2 = ql.newAgent('oxbot',actionSet)
+		.then(ql.bindStateGenerator(stateGen(me='✅',opponentMove)))
+		.then(ql.bindRewardMeasure(rewardOfState(me='✅',them='❌')))
+		.then(ql.bindActionCostMeasure(actionCost))
+		.then(ql.bindStopCriteria(stopCrit(me='✅',them='❌')))
+		.load('./agent');
+
+	// Let two bots play each other!	
 	var alpha = 0.33;
 	var board = [
 		[0,0,0],
@@ -204,23 +212,14 @@ function botVsBot(){
 	];
 
 	// Bot1 starts the game
-	bots[0].then(
-		ql.start(board,stopCrit,alpha) // TAOTODO: Bind the opponent's state generator here
-	)
-
+	bots[0].then(ql.start(board,stopCrit,alpha)) // TAOTODO: StopCrit function depends on each player
+		.then(ql.save('./agent'))
+		.then((agent) => console.log('AGENT HAS BEEN TRAINED!'.cyan))
+		.then(() => process.exit(0))
 }
 
-/*
-var alpha = 0.5;
-var game = ql
-	.newAgent('ox-agent',actionSet,stateGen,rewardOfState,actionCost)
-	.then(ql.load('.'))
-	.then(ql.start(initState,stopCrit,alpha))
-	.then(ql.save('.'))
-	.then((agent) =>
-		console.log('--TRAINED AGENT--'.cyan)
-	)
-
-
-*/
+// Play a bot vs human
+function botVsHuman(){
+	// TAOTODO:
+}
 

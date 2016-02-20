@@ -17,21 +17,42 @@ Promise.longStackTraces = true;
  * Create a new agent with given predefined actionset
  * @param {String} name of the agent file to save or load
  * @param {Array} list of actions (string)
- * @param {Function} state generator function
- * @param {Function} function that determines the reward of a state
- * @param {Function} action cost function
  */
-ql.newAgent = function(name,actionset,stateGenerator,rewardOfState,actionCost){
+ql.newAgent = function(name,actionset){
 	var agent = {}
 	agent.name = name;
 	agent.actionset = actionset;
-	agent.func = {
-		stateGenerator: stateGenerator, //*NOTE: State generator will return a promise
-		rewardOfState: rewardOfState,
-		actionCost: actionCost
-	};
+	agent.func = {};
 	agent.policy = {}
 	return Promise.resolve(agent)
+}
+
+ql.bindStateGenerator = function(stateGenerator){
+	return function(agent){
+		agent.func.stateGenerator = stateGenerator;
+		return agent;
+	}
+}
+
+ql.bindRewardMeasure = function(rewardOfState){
+	return function (agent){
+		agent.func.rewardOfState = rewardOfState;
+		return agent;
+	}
+}
+
+ql.bindActionCostMeasure = function(actionCost){
+	return function(agent){
+		agent.func.actionCost = actionCost;
+		return agent;
+	}
+}
+
+ql.bindStopCriteria = function(stopCrit){
+	return function(agent){
+		agent.func.stopCrit = stopCrit;
+		return agent;
+	}
 }
 
 /**
