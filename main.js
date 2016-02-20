@@ -17,13 +17,15 @@ Promise.longStackTraces = true;
  * Create a new agent with given predefined actionset
  * @param {String} name of the agent file to save or load
  * @param {Array} list of actions (string)
+ * @param {Number} learning rate
  */
-ql.newAgent = function(name,actionset){
+ql.newAgent = function(name,actionset,alpha){
 	var agent = {}
 	agent.name = name;
 	agent.actionset = actionset;
 	agent.func = {};
-	agent.policy = {}
+	agent.policy = {};
+	agent.alpha = alpha;
 	return Promise.resolve(agent)
 }
 
@@ -109,10 +111,9 @@ ql.revealBrain = function(agent){
  * Update the policy from the observation
  * @param {Array} state
  * @param {String} action
- * @param {Number} learning rate
  * @param {Number} reward value
  */
-ql.__updatePolicy = function(state,action,alpha,reward){
+ql.__updatePolicy = function(state,action,reward){
 	return function(agent){
 		// Register a new state if haven't
 		if (!agent.policy.hasOwnProperty(state)){
@@ -125,7 +126,7 @@ ql.__updatePolicy = function(state,action,alpha,reward){
 			// State exists, update the action reward
 			agent.policy[state] = agent.policy[state].map(function(a){
 				if (a.action==action) 
-					return {action: action, reward: a.reward + (alpha*reward)};
+					return {action: action, reward: a.reward + (agent.alpha*reward)};
 				else return {action:a.action, reward: a.reward}
 			})
 		}
@@ -239,7 +240,9 @@ ql.step = function(state,stopCrit,alpha,history){
 		var chosen = nexts[0]; // TAOTODO: We may rely on other choices
 		var currentReward = agent.func['rewardOfState'](state);
 
-		// Generate the next state
+		// Let the environment generate
+		// the next state in response to
+		// the action we have committed.
 		var nextState = null;
 		return agent.func['stateGenerator'](state,chosen.action)
 			.then(function(next){
