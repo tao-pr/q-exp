@@ -229,7 +229,7 @@ ql.start = function(initState){
 ql.step = function(state,opponentAction){
 	return function(agent){
 
-		ql.isVerbose && console.log('...');
+		ql.isVerbose && console.log('STEP BEGINS'.green);
 
 		// End up at a terminal state?
 		if (agent.func['stopCrit'](state)){
