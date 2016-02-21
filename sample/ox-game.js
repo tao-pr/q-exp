@@ -21,9 +21,8 @@ ql.isVerbose = true;
  *-----------------
 */
 
-var ox = {};
-ox.stateToStr = (s) => JSON.stringify(s);
-ox.strToState = (s) => JSON.parse(s);
+var stateToStr = (s) => JSON.stringify(s);
+var strToState = (s) => JSON.parse(s);
 
 var applyAction = function(state,i,j,c){
 	state[j][i] = c;
@@ -190,6 +189,8 @@ function botVsBot(){
 	// Prepare instances of two bots
 	let me, them;
 	var bot1 = ql.newAgent('ox',actionSet)
+		// TAOTODO: NOTE: This could not be bound before @bot2 has
+		// been properly initialised :(
 		.then(ql.bindStateGenerator(stateGen(me='❌',(state,action) => {
 			// Hand over to @bot2 to move
 			return bot2.then((bot) => ql.step(state,action,[]))
