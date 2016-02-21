@@ -23,7 +23,7 @@ zero (theoretically). Each of the operation takes an input,
 processes on its own, then passes over the output to 
 the next operation over Promise.
 
-The sample pipeline can be written as follows.
+**The sample pipeline can be written as follows.**
 
 ```
 ql.newAgent('johndoe',['walk','run','standstill'])
@@ -37,3 +37,13 @@ Each of the operation (represented in each individual line),
 has absolutely no coupling dependencies with its proceeding 
 or succeeding piped operation at all. It just takes an input 
 (which is an agent instance), passes it over for processing.
+
+
+## Prepare required functions
+
+Q-EXP requires you to prepare several fundamental auxilialy 
+functions as follows.
+
+[x] **ddd**
+[x] **ddd**
+[x] **ddd**

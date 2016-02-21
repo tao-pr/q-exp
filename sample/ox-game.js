@@ -25,7 +25,11 @@ ql.isVerbose = true;
 var stateToStr = (s) => typeof(s)=='string' ? s : JSON.stringify(s);
 var strToState = (s) => typeof(s)=='string' ? JSON.parse(s) : s;
 
-var applyAction = function(state,i,j,c){
+var applyAction = function(state,action,c){
+
+	let act = action.match(/c*(\d)(\d)/);
+	let i = act[1];
+	let j = act[2];
 	state[j][i] = c;
 	return state;
 }
@@ -36,13 +40,9 @@ var drawState = function(state){
 	})
 }
 
-var stateGen = function(myspot,opponentMove){
+var stateGen = function(myspot,theirspot,opponentMove){
 
 	return function(s,a){
-		// Get which cell to fill
-		var action = a.match(/c(\d)(\d)/);
-		var i = action[1];
-		var j = action[2];
 
 		var state = strToState(s);
 
@@ -51,13 +51,13 @@ var stateGen = function(myspot,opponentMove){
 		drawState(state);
 
 		// Apply the agent's move
-		state = applyAction(state,i,j,myspot);
+		state = applyAction(state,a,myspot);
 		console.log('[APPLY ' + myspot + '] '.green + a);
 		console.log('[AFTER' + myspot + ' MOVE]'.green);
 		drawState(state);
 
 		// Bot won?
-		if (stopCrit(stateToStr(state))){
+		if (stopCrit(myspot,theirspot)(stateToStr(state))){
 			console.log('[' + myspot + ' ENDED THE GAME]'.green);
 			return Promise.resolve(stateToStr(state));
 		}
@@ -78,17 +78,15 @@ var humanGenerateState = function(state){
 			// TAOTODO: valid move?
 
 			// Apply the move
-			let action = res.move.match(/c*(\d)(\d)/);
-			let i = action[1];
-			let j = action[2];
 			// Human always uses green check as their move symbol
-			state = applyAction(state,i,j,'✅'); 
+			state = applyAction(state,res.move,'✅'); 
 
 			console.log('[AFTER YOUR MOVE]'.green);
 			drawState(state);
 
 			// Human won?
-			if (stopCrit(stateToStr(state))){
+			let myspot = '✅', theirspot = '❌';
+			if (stopCrit(myspot,theirspot)(stateToStr(state))){
 				console.log('[YOU ENDED THE GAME]!'.green);
 			}
 
@@ -102,7 +100,7 @@ var rewardOfState = function(myspot,theirspot){
 
 	return function(state){
 		state = strToState(state);
-		
+
 		// Reward = 1 if win
 		// Reward = -1 if lose
 		// Reward is higher if more close to win
@@ -165,7 +163,7 @@ var stopCrit = function(myspot,theirspot){
 		if (Math.abs(cost)>=1) return true;
 		
 		// Still there any space to move?
-		if (state.indexOf('0')>0) return false;
+		if (stateToStr(state).indexOf('0')>0) return false;
 		else return true;
 	}
 }
@@ -197,10 +195,13 @@ function botVsBot(){
 		.then(ql.load('./agent'));
 
 	var bot2 = ql.newAgent('ox2',actionSet)
-		.then(ql.bindStateGenerator(stateGen(me='✅',(state,action) => {
-			// Hand over to @bot1 to move
-			return bot1.then((bot) => ql.step(state,action,[]))
-		})))
+		.then(ql.bindStateGenerator(stateGen(
+			// @bot2 will only take an action and leave 
+			// the game for @bot1 to control
+			me='✅',
+			them='❌',
+			(state,action) => applyAction(state,action,'✅')
+		)))
 		.then(ql.bindRewardMeasure(rewardOfState(me='✅',them='❌')))
 		.then(ql.bindActionCostMeasure(actionCost))
 		.then(ql.bindStopCriteria(stopCrit(me='✅',them='❌')))
@@ -208,10 +209,16 @@ function botVsBot(){
 
 	// After having @bot2 initialised,
 	// bind the move transition to @bot1
-	bot1.then(ql.bindStateGenerator(stateGen(me='❌',(state,action) => {
+	bot1.then(ql.bindStateGenerator(stateGen(me='❌',them='✅',(state,action) => 
 		// Hand over to @bot2 to move
-		return bot2.then((bot) => ql.step(state,action,[]))
-	})))
+
+		// TAODEBUG:
+		//console.log('@bot2 please move'.green) ||
+		//console.log(state) ||
+		//console.log(action)
+
+		bot2.then(ql.step(state,action,[]))
+	)))
 
 
 	// Let two bots play each other!	
