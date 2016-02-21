@@ -52,13 +52,13 @@ var stateGen = function(myspot,opponentMove){
 
 		// Apply the agent's move
 		state = applyAction(state,i,j,myspot);
-		console.log(agent.name + ' [APPLY ' + myspot + '] '.green + a);
-		console.log('[AFTER' + agent.name + ' MOVE]'.green);
+		console.log('[APPLY ' + myspot + '] '.green + a);
+		console.log('[AFTER' + myspot + ' MOVE]'.green);
 		drawState(state);
 
 		// Bot won?
 		if (stopCrit(stateToStr(state))){
-			console.log('[' + agent.name + ' ENDED THE GAME]'.green);
+			console.log('[' + myspot + ' ENDED THE GAME]'.green);
 			return Promise.resolve(stateToStr(state));
 		}
 
@@ -223,7 +223,7 @@ function botVsBot(){
 	];
 
 	// Bot1 starts the game
-	bot1.then(ql.start(board)) 
+	bot1.then(ql.start(stateToStr(board))) 
 		.then(ql.save('./agent'))
 		.then((agent) => console.log(agent.name + ' HAS BEEN TRAINED!'.cyan))
 		.then(() => {
