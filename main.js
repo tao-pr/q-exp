@@ -204,7 +204,11 @@ ql.__exploreNext = function(state){
 ql.start = function(initState){
 	return function(agent){
 		ql.isVerbose && console.log('Starting...'.cyan);
-		return ql.step(initState,opponentAct=null,history=[])(agent)
+		
+		var history = [];
+		var recentOpponentAction = 'init'; // Literally meaningless
+
+		return ql.step(initState,recentOpponentAction,history)(agent)
 	}
 }
 
@@ -212,14 +216,14 @@ ql.start = function(initState){
 /**
  * Step to explore the next state
  * @param {String} current state
- * @param {String} action taken by the opponent which introduced the current state
+ * @param {String} recent opponent's action
  * @param {Array} list of the recent states and actions
  */
 ql.step = function(state,opponentAction,history){
 	return function(agent){
 
 		ql.isVerbose && console.log('...');
-
+		
 		// End up at a terminal state?
 		if (agent.func['stopCrit'](state)){
 			// Finish!
@@ -239,10 +243,15 @@ ql.step = function(state,opponentAction,history){
 
 		// Let the environment generate
 		// the next state in response to
-		// the action we have committed.
+		// the recent action we have just taken.
 		var nextState = null;
+
+		ql.isVerbose && console.log('Generating next state'.magenta);
+		ql.isVerbose && console.log(JSON.stringify(chosen).magenta);
+
 		return agent.func['stateGenerator'](state,chosen.action)
 			.then(function(next){
+
 				nextState = next;
 				var nextReward = agent.func['rewardOfState'](nextState);
 				
@@ -284,7 +293,7 @@ ql.step = function(state,opponentAction,history){
 				ql.isVerbose && console.log(`   reward     = ${nextReward}`)
 				return agent
 			})
-			.then((agent) => ql.step(nextState,history)(agent))
+			.then((agent) => ql.step(nextState,null,history)(agent))
 			.catch((e) => {
 				console.error('FATAL '.red + e.message);
 				console.error(e.stack);
