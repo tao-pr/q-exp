@@ -18,16 +18,14 @@ Promise.longStackTraces = true;
  * @param {String} name of the agent file to save or load
  * @param {Array} list of actions (string)
  * @param {Number} learning rate
- * @param {bool} whether the agent automatically steps recursively
  */
-ql.newAgent = function(name,actionset,alpha,isAutoRecursion){
+ql.newAgent = function(name,actionset,alpha){
 	var agent = {}
 	agent.name = name;
 	agent.actionset = actionset;
 	agent.func = {};
 	agent.policy = {};
 	agent.alpha = alpha || 0.5;
-	agent.isAutoRecursion = isAutoRecursion || true;
 	agent.history = [];
 	return Promise.resolve(agent)
 }
@@ -53,12 +51,6 @@ ql.bindActionCostMeasure = function(actionCost){
 	}
 }
 
-ql.bindStopCriteria = function(stopCrit){
-	return function(agent){
-		agent.func.stopCrit = stopCrit;
-		return agent;
-	}
-}
 
 ql.clearHistory = function(agent){
 	agent.history.length = 0;
@@ -239,7 +231,12 @@ ql.getState = function(agent){
 }
 
 
-ql.learnRecentStep = function(){
+/**
+ * Learn from the recent step which introduces a new state
+ * This should be called after `ql.step`
+ * and then `ql.setState` strictly
+ */
+ql.learn = function(){
 	return function(agent){
 		// History primary validations
 		if (agent.history.length<2){
@@ -262,11 +259,11 @@ ql.learnRecentStep = function(){
 		var reward1 = agent.func['rewardOfState'](after);
 		var delta   = agent.alpha * (reward1 - reward0);
 
-		// Update the policy
+		// Learn from mistake, update the policy
 		ql.isVerbose && console.log(agent.name + ' learning new policy'.cyan);
 		ql.__updatePolicy(agent, before.state, after.action, delta);
 
-		// TAOTODO:
+		return agent;
 	}
 }
 
