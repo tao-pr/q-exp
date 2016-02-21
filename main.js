@@ -212,103 +212,95 @@ ql.__exploreNext = function(state){
 ql.start = function(initState){
 	return function(agent){
 		ql.isVerbose && console.log('Starting...'.cyan);
-		var recentOpponentAction = 'init'; // Literally meaningless
 
 		// Clear the history then start
 		return ql.clearHistory(agent)
-			.then(ql.step(initState,recentOpponentAction));
+			.then(ql.setState(initState))
+			.then(ql.step);
 	}
 }
 
 
 /**
- * Step to explore the next state
- * @param {String} current state
- * @param {String} recent opponent's action
+ * Set the current state
  */
-ql.step = function(state,opponentAction){
+ql.setState = function(state){
 	return function(agent){
+		agent.state = state;
+		// Push the state to the history list too
+		agent.history.push({action: null, state: state})
+		return agent;
+	}
+}
 
-		ql.isVerbose && console.log('STEP BEGINS'.green);
 
-		// End up at a terminal state?
-		if (agent.func['stopCrit'](state)){
-			// Finish!
-			ql.isVerbose && console.log('FINISH!'.green);
-			return Promise.resolve(agent);
+ql.getState = function(agent){
+	return agent.state
+}
+
+
+ql.learnRecentStep = function(){
+	return function(agent){
+		// History primary validations
+		if (agent.history.length<2){
+			return Promise.reject('Agent has not yet made any steps.');
 		}
 
-		// Explore the next states
-		var nexts = ql.__exploreNext(state)(agent);
+		if (_.last(agent.history).action==null){
+			return Promise.reject('Agent needs to step first.');
+		}
 
-		ql.isVerbose && console.log('generated actions:'.yellow);
-		ql.isVerbose && console.log(nexts);
-		
-		// Pick the best action (greedy tithering)
-		var chosen = nexts[0]; // TAOTODO: We may rely on other choices
-		var currentReward = agent.func['rewardOfState'](state);
+		if (agent.history[agent.history-2].action != null){
+			return Promise.reject('The state before taking an action is missing.')
+		}
 
-		// Let the environment generate
-		// the next state in response to
-		// the recent action we have just taken.
-		var nextState = null;
+		// Take the sequence for computation
+		var before = agent.history[agent.history.length-2];
+		var after  = agent.history[agent.history.length-1];
 
-		// Register the chosen action
-		agent.history.push({action: chosen.action, state: state});
+		var reward0 = agent.func['rewardOfState'](before);
+		var reward1 = agent.func['rewardOfState'](after);
+		var delta   = agent.alpha * (reward1 - reward0);
 
-		ql.isVerbose && console.log(agent.name + ' generating next state'.magenta);
-		ql.isVerbose && console.log(JSON.stringify(chosen).magenta);
+		// Update the policy
+		ql.isVerbose && console.log(agent.name + ' learning new policy'.cyan);
+		ql.__updatePolicy(agent, before.state, after.action, delta);
 
-		return agent.func['stateGenerator'](state,chosen.action)
-			.then(function(next){
-
-				nextState = next;
-				var nextReward = agent.func['rewardOfState'](nextState);
-				
-				// Update the state such that
-				// Q(s, a) += alpha * (reward(s,a) + max(Q(s') - Q(s,a))
-				// where
-				// s  : current state
-				// s' : next state
-				ql.__updatePolicy(
-					state,
-					chosen.action,
-					agent.alpha,
-					nextReward
-				)(agent);
-
-				// Update the immediate previous state too
-				if (agent.history.length>0){
-
-					var recent = _.last(agent.history);
-					var recentReward = agent.func['rewardOfState'](recent.state);
-
-					ql.isVerbose && console.log('    Weaken action: '.blue + recent.action + ' ' + recentReward);
-
-					ql.__updatePolicy(
-						recent.state,
-						recent.action,
-						agent.alpha*agent.alpha,
-						nextReward
-					)(agent);
-				}
-
-				if (agent.isAutoRecursion){
-					return Promise.resolve((agent) => 
-						ql.step(nextState,null,history)(agent)
-					);
-				}
-				else{
-					ql.isVerbose && console.log('No auto recursion, ends now'.yellow);
-					return agent;
-				}
-			})
-			///.then((agent) => ql.step(nextState,null,history)(agent))
-			.catch((e) => {
-				console.error('FATAL '.red + e.message);
-				console.error(e.stack);
-			})
+		// TAOTODO:
 	}
+}
+
+
+/**
+ * Let the agent choose the next best action
+ */
+ql.step = function(agent){
+
+	ql.isVerbose && console.log('STEP BEGINS'.green);
+
+	if (!agent.state){
+		return Promise.reject('Assign the current state first with `ql.setState`');
+	}
+
+	// Explore the next states
+	var nexts = ql.__exploreNext(agent.state)(agent);
+
+	ql.isVerbose && console.log('generated actions:'.yellow);
+	ql.isVerbose && console.log(nexts);
+	
+	// Pick the best action (greedy tithering)
+	var chosen = nexts[0]; // TAOTODO: We may rely on other choices
+	var currentReward = agent.func['rewardOfState'](agent.state);
+
+	// Register the chosen action
+	agent.history.push({action: chosen.action, state: agent.state});
+
+	ql.isVerbose && console.log(agent.name + ' chose action :'.green + chosen.action);
+
+	// Generate the state after an action is taken
+	agent.state = agent.func['stateGenerator'](agent.state, chosen.action);
+
+	return agent;
 }
 
 
