@@ -113,22 +113,22 @@ ql.revealBrain = function(agent){
  * Update the policy from the observation
  * @param {Array} state
  * @param {String} action
- * @param {Number} reward value
+ * @param {Number} reward value to add
  */
-ql.__updatePolicy = function(state,action,reward){
+ql.__updatePolicy = function(state,action,rewardAddUp){
 	return function(agent){
 		// Register a new state if haven't
 		if (!agent.policy.hasOwnProperty(state)){
 			agent.policy[state] = {}
 			agent.policy[state] = agent.actionset.map(function(a){
-				return {action: a, reward: a==action ? reward : 0}
+				return {action: a, reward: a==action ? rewardAddUp : 0}
 			})
 		}
 		else{
 			// State exists, update the action reward
 			agent.policy[state] = agent.policy[state].map(function(a){
 				if (a.action==action) 
-					return {action: action, reward: a.reward + (agent.alpha*reward)};
+					return {action: action, reward: rewardAddUp};
 				else return {action:a.action, reward: a.reward}
 			})
 		}
