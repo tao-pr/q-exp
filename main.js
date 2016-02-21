@@ -27,7 +27,8 @@ ql.newAgent = function(name,actionset,alpha,isAutoRecursion){
 	agent.func = {};
 	agent.policy = {};
 	agent.alpha = alpha || 0.5;
-	alpha.isAutoRecursion = isAutoRecursion || true;
+	agent.isAutoRecursion = isAutoRecursion || true;
+	agent.history = [];
 	return Promise.resolve(agent)
 }
 
@@ -57,6 +58,11 @@ ql.bindStopCriteria = function(stopCrit){
 		agent.func.stopCrit = stopCrit;
 		return agent;
 	}
+}
+
+ql.clearHistory = function(agent){
+	agent.history.length = 0;
+	return Promise.resolve(agent);
 }
 
 /**
@@ -206,11 +212,11 @@ ql.__exploreNext = function(state){
 ql.start = function(initState){
 	return function(agent){
 		ql.isVerbose && console.log('Starting...'.cyan);
-		
-		var history = [];
 		var recentOpponentAction = 'init'; // Literally meaningless
 
-		return ql.step(initState,recentOpponentAction,history)(agent)
+		// Clear the history then start
+		return ql.clearHistory(agent)
+			.then(ql.step(initState,recentOpponentAction));
 	}
 }
 
@@ -219,9 +225,8 @@ ql.start = function(initState){
  * Step to explore the next state
  * @param {String} current state
  * @param {String} recent opponent's action
- * @param {Array} list of the recent states and actions
  */
-ql.step = function(state,opponentAction,history){
+ql.step = function(state,opponentAction){
 	return function(agent){
 
 		ql.isVerbose && console.log('...');
@@ -248,6 +253,9 @@ ql.step = function(state,opponentAction,history){
 		// the recent action we have just taken.
 		var nextState = null;
 
+		// Register the chosen action
+		agent.history.push({action: chosen.action, state: state});
+
 		ql.isVerbose && console.log(agent.name + ' generating next state'.magenta);
 		ql.isVerbose && console.log(JSON.stringify(chosen).magenta);
 
@@ -270,8 +278,9 @@ ql.step = function(state,opponentAction,history){
 				)(agent);
 
 				// Update the immediate previous state too
-				if (history && history.length>0){
-					var recent = _.last(history);
+				if (agent.history.length>0){
+
+					var recent = _.last(agent.history);
 					var recentReward = agent.func['rewardOfState'](recent.state);
 
 					ql.isVerbose && console.log('    Weaken action: '.blue + recent.action + ' ' + recentReward);
@@ -283,19 +292,9 @@ ql.step = function(state,opponentAction,history){
 						nextReward
 					)(agent);
 				}
-				
-				// Register the history
-				ql.isVerbose && console.log(`History recorded: ${chosen.action}`)
-				history.push({action: chosen.action, state: state});
-
-				ql.isVerbose && console.log('Proceeded... '.cyan)
-				ql.isVerbose && console.log(`   prev state = ${state}`);
-				ql.isVerbose && console.log(`   next state = ${nextState}`)
-				ql.isVerbose && console.log(`   chosen act = ${chosen.action}`)
-				ql.isVerbose && console.log(`   reward     = ${nextReward}`)
 
 				if (agent.isAutoRecursion){
-					return agent.then((agent) => 
+					return Promise.resolve((agent) => 
 						ql.step(nextState,null,history)(agent)
 					);
 				}

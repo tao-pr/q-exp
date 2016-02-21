@@ -199,14 +199,14 @@ function botVsBot(){
 		.then(ql.bindStopCriteria(stopCrit(me='❌',them='✅')))
 		.then(ql.load('./agent'));
 
+	// @bot2 will only take an action and leave 
+	// the game for @bot1 to control
 	var bot2 = ql.newAgent('ox2',actionSet,autoRecursion=false)
 		.then(ql.bindStateGenerator(
-			// @bot2 will only take an action and leave 
-			// the game for @bot1 to control
 			stateGen(
 				me='✅',
 				them='❌',
-				(state,action) => Promise.resolve(applyAction(state,action,'✅'))
+				(state,action) => Promise.resolve(stateToStr(applyAction(state,action,'✅')))
 			))
 		)
 		.then(ql.bindRewardMeasure(rewardOfState(me='✅',them='❌')))
@@ -218,7 +218,7 @@ function botVsBot(){
 	// bind the move transition to @bot1
 	bot1.then(ql.bindStateGenerator(stateGen(me='❌',them='✅',(state,action) => 
 		// Hand over to @bot2 to move
-		bot2.then(ql.step(state,action,[]))
+		bot2.then(ql.step(state,action))
 	)))
 
 
