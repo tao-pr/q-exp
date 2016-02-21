@@ -27,6 +27,11 @@ var strToState = (s) => typeof(s)=='string' ? JSON.parse(s) : s;
 
 var applyAction = function(state,action,c){
 
+	// TAODEBUG:
+	console.log('Apply action'.yellow);
+	console.log(state);
+	console.log(action);
+
 	let act = action.match(/c*(\d)(\d)/);
 	let i = act[1];
 	let j = act[2];
@@ -63,16 +68,16 @@ var stateGen = function(myspot,theirspot,opponentMove){
 		}
 
 		// Ask the opponent to generate the next move
-		prompt.start();
-		return opponentMove(state);
-
+		return opponentMove(state,a);
 	}
 }
 
 /**
  * Ask human player to generate the next state
+ * TAOTODO: Haven't tested
  */
 var humanGenerateState = function(state){
+	prompt.start();
 	return new Promise((done,reject)=>
 		prompt.get(['move'],(err,res)=>{
 			// TAOTODO: valid move?
@@ -187,21 +192,23 @@ var actionSet = [
 function botVsBot(){
 	
 	// Prepare instances of two bots
-	let me, them;
-	var bot1 = ql.newAgent('ox1',actionSet)
+	let me, them, autoRecursion;
+	var bot1 = ql.newAgent('ox1',actionSet,autoRecursion=true)
 		.then(ql.bindRewardMeasure(rewardOfState(me='❌',them='✅')))
 		.then(ql.bindActionCostMeasure(actionCost))
 		.then(ql.bindStopCriteria(stopCrit(me='❌',them='✅')))
 		.then(ql.load('./agent'));
 
-	var bot2 = ql.newAgent('ox2',actionSet)
-		.then(ql.bindStateGenerator(stateGen(
+	var bot2 = ql.newAgent('ox2',actionSet,autoRecursion=false)
+		.then(ql.bindStateGenerator(
 			// @bot2 will only take an action and leave 
 			// the game for @bot1 to control
-			me='✅',
-			them='❌',
-			(state,action) => applyAction(state,action,'✅')
-		)))
+			stateGen(
+				me='✅',
+				them='❌',
+				(state,action) => Promise.resolve(applyAction(state,action,'✅'))
+			))
+		)
 		.then(ql.bindRewardMeasure(rewardOfState(me='✅',them='❌')))
 		.then(ql.bindActionCostMeasure(actionCost))
 		.then(ql.bindStopCriteria(stopCrit(me='✅',them='❌')))
@@ -211,12 +218,6 @@ function botVsBot(){
 	// bind the move transition to @bot1
 	bot1.then(ql.bindStateGenerator(stateGen(me='❌',them='✅',(state,action) => 
 		// Hand over to @bot2 to move
-
-		// TAODEBUG:
-		//console.log('@bot2 please move'.green) ||
-		//console.log(state) ||
-		//console.log(action)
-
 		bot2.then(ql.step(state,action,[]))
 	)))
 
