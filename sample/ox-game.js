@@ -8,6 +8,7 @@
 var colors = require('colors');
 var prompt = require('prompt');
 var ql = require('../main.js');
+var fs = require('fs');
 
 ql.isVerbose = true;
 
@@ -21,8 +22,8 @@ ql.isVerbose = true;
  *-----------------
 */
 
-var stateToStr = (s) => JSON.stringify(s);
-var strToState = (s) => JSON.parse(s);
+var stateToStr = (s) => typeof(s)=='string' ? s : JSON.stringify(s);
+var strToState = (s) => typeof(s)=='string' ? JSON.parse(s) : s;
 
 var applyAction = function(state,i,j,c){
 	state[j][i] = c;
@@ -51,13 +52,13 @@ var stateGen = function(myspot,opponentMove){
 
 		// Apply the agent's move
 		state = applyAction(state,i,j,myspot);
-		console.log('[APPLY] '.green + a);
-		console.log('[AFTER ' + myspot + ' MOVE]'.green);
+		console.log(agent.name + ' [APPLY ' + myspot + '] '.green + a);
+		console.log('[AFTER' + agent.name + ' MOVE]'.green);
 		drawState(state);
 
 		// Bot won?
 		if (stopCrit(stateToStr(state))){
-			console.log('[' + myspot + ' ENDED THE GAME]'.green);
+			console.log('[' + agent.name + ' ENDED THE GAME]'.green);
 			return Promise.resolve(stateToStr(state));
 		}
 
@@ -157,8 +158,9 @@ var actionCost = function(state,a){
 var stopCrit = function(myspot,theirspot){
 
 	return function(state){
+
 		// Somebody won?
-		var cost = rewardOfState(myspot,theirspot)(state)
+		var cost = rewardOfState(myspot,theirspot)(state);
 		console.log(` cost of current state = ${cost}`);
 		if (Math.abs(cost)>=1) return true;
 		
@@ -188,19 +190,13 @@ function botVsBot(){
 	
 	// Prepare instances of two bots
 	let me, them;
-	var bot1 = ql.newAgent('ox',actionSet)
-		// TAOTODO: NOTE: This could not be bound before @bot2 has
-		// been properly initialised :(
-		.then(ql.bindStateGenerator(stateGen(me='❌',(state,action) => {
-			// Hand over to @bot2 to move
-			return bot2.then((bot) => ql.step(state,action,[]))
-		})))
+	var bot1 = ql.newAgent('ox1',actionSet)
 		.then(ql.bindRewardMeasure(rewardOfState(me='❌',them='✅')))
 		.then(ql.bindActionCostMeasure(actionCost))
 		.then(ql.bindStopCriteria(stopCrit(me='❌',them='✅')))
-		.load('./agent');
+		.then(ql.load('./agent'));
 
-	var bot2 = ql.newAgent('ox',actionSet)
+	var bot2 = ql.newAgent('ox2',actionSet)
 		.then(ql.bindStateGenerator(stateGen(me='✅',(state,action) => {
 			// Hand over to @bot1 to move
 			return bot1.then((bot) => ql.step(state,action,[]))
@@ -208,7 +204,15 @@ function botVsBot(){
 		.then(ql.bindRewardMeasure(rewardOfState(me='✅',them='❌')))
 		.then(ql.bindActionCostMeasure(actionCost))
 		.then(ql.bindStopCriteria(stopCrit(me='✅',them='❌')))
-		.load('./agent');
+		.then(ql.load('./agent'));
+
+	// After having @bot2 initialised,
+	// bind the move transition to @bot1
+	bot1.then(ql.bindStateGenerator(stateGen(me='❌',(state,action) => {
+		// Hand over to @bot2 to move
+		return bot2.then((bot) => ql.step(state,action,[]))
+	})))
+
 
 	// Let two bots play each other!	
 	var alpha = 0.33;
@@ -219,14 +223,23 @@ function botVsBot(){
 	];
 
 	// Bot1 starts the game
-	bots[0].then(ql.start(board)) 
+	bot1.then(ql.start(board)) 
 		.then(ql.save('./agent'))
-		.then((agent) => console.log('AGENT HAS BEEN TRAINED!'.cyan))
-		.then(() => process.exit(0))
+		.then((agent) => console.log(agent.name + ' HAS BEEN TRAINED!'.cyan))
+		.then(() => {
+			// Copy trained @bot1 as @bot2 for later play
+			fs.createReadStream('./agent/bot1.agent')
+				.pipe(fs.createWriteStream('./agent/ox2.agent'));
+			process.exit(0);
+		})
 }
 
 // Play a bot vs human
 function botVsHuman(){
 	// TAOTODO:
 }
+
+
+// Main function
+botVsBot();
 
