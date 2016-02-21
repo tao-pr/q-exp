@@ -30,6 +30,8 @@ ql.newAgent = function(name,actionset,alpha){
 	return Promise.resolve(agent)
 }
 
+// stateGenerator takes a state and an action
+// to create a new subsequent state
 ql.bindStateGenerator = function(stateGenerator){
 	return function(agent){
 		agent.func.stateGenerator = stateGenerator;
@@ -260,7 +262,7 @@ ql.learn = function(){
 		var delta   = agent.alpha * (reward1 - reward0);
 
 		// Learn from mistake, update the policy
-		ql.isVerbose && console.log(agent.name + ' learning new policy'.cyan);
+		ql.isVerbose && console.log(agent.name + ' learning new policy ...'.cyan + delta.toFixed(2));
 		ql.__updatePolicy(agent, before.state, after.action, delta);
 
 		return agent;
