@@ -18,14 +18,16 @@ Promise.longStackTraces = true;
  * @param {String} name of the agent file to save or load
  * @param {Array} list of actions (string)
  * @param {Number} learning rate
+ * @param {bool} whether the agent automatically steps recursively
  */
-ql.newAgent = function(name,actionset,alpha){
+ql.newAgent = function(name,actionset,alpha,isAutoRecursion){
 	var agent = {}
 	agent.name = name;
 	agent.actionset = actionset;
 	agent.func = {};
 	agent.policy = {};
-	agent.alpha = alpha;
+	agent.alpha = alpha || 0.5;
+	alpha.isAutoRecursion = isAutoRecursion || true;
 	return Promise.resolve(agent)
 }
 
@@ -223,7 +225,7 @@ ql.step = function(state,opponentAction,history){
 	return function(agent){
 
 		ql.isVerbose && console.log('...');
-		
+
 		// End up at a terminal state?
 		if (agent.func['stopCrit'](state)){
 			// Finish!
@@ -246,7 +248,7 @@ ql.step = function(state,opponentAction,history){
 		// the recent action we have just taken.
 		var nextState = null;
 
-		ql.isVerbose && console.log('Generating next state'.magenta);
+		ql.isVerbose && console.log(agent.name + ' generating next state'.magenta);
 		ql.isVerbose && console.log(JSON.stringify(chosen).magenta);
 
 		return agent.func['stateGenerator'](state,chosen.action)
@@ -291,9 +293,18 @@ ql.step = function(state,opponentAction,history){
 				ql.isVerbose && console.log(`   next state = ${nextState}`)
 				ql.isVerbose && console.log(`   chosen act = ${chosen.action}`)
 				ql.isVerbose && console.log(`   reward     = ${nextReward}`)
-				return agent
+
+				if (agent.isAutoRecursion){
+					return agent.then((agent) => 
+						ql.step(nextState,null,history)(agent)
+					);
+				}
+				else{
+					ql.isVerbose && console.log('No auto recursion, ends now'.yellow);
+					return agent;
+				}
 			})
-			.then((agent) => ql.step(nextState,null,history)(agent))
+			///.then((agent) => ql.step(nextState,null,history)(agent))
 			.catch((e) => {
 				console.error('FATAL '.red + e.message);
 				console.error(e.stack);
