@@ -53,6 +53,13 @@ ql.bindActionCostMeasure = function(actionCost){
 	}
 }
 
+ql.bindStatePrinter = function(p){
+	return function(agent){
+		agent.func.statePrint = p;
+		return agent;
+	}
+}
+
 
 ql.clearHistory = function(agent){
 	agent.history.length = 0;
@@ -161,7 +168,7 @@ ql.__rewardOf = function(state){
 ql.__q = function(state,action){
 	
 	return function(agent){
-		var cost = agent.func['actionCost'](state,action);
+		var cost = agent.func.actionCost(state,action);
 		if (cost<0)
 			return cost;
 
@@ -170,7 +177,7 @@ ql.__q = function(state,action){
 			// Yes, we have the state memorised
 			var _act = (agent.policy[state].filter((a) => a.action==action));
 			if (_act.length==0)
-				return agent.func['actionCost'](state,a);
+				return agent.funcactionCost(state,a);
 			else
 				return _act[0].reward;
 		}
@@ -257,8 +264,8 @@ ql.learn = function(){
 		var before = agent.history[agent.history.length-2];
 		var after  = agent.history[agent.history.length-1];
 
-		var reward0 = agent.func['rewardOfState'](before);
-		var reward1 = agent.func['rewardOfState'](after);
+		var reward0 = agent.func.rewardOfState(before);
+		var reward1 = agent.func.rewardOfState(after);
 		var delta   = agent.alpha * (reward1 - reward0);
 
 		// Learn from mistake, update the policy
@@ -289,7 +296,7 @@ ql.step = function(agent){
 	
 	// Pick the best action (greedy tithering)
 	var chosen = nexts[0]; // TAOTODO: We may rely on other choices
-	var currentReward = agent.func['rewardOfState'](agent.state);
+	var currentReward = agent.func.rewardOfState(agent.state);
 
 	// Register the chosen action
 	agent.history.push({action: chosen.action, state: agent.state});
@@ -297,7 +304,10 @@ ql.step = function(agent){
 	ql.isVerbose && console.log(agent.name + ' chose action :'.green + chosen.action);
 
 	// Generate the state after an action is taken
-	agent.state = agent.func['stateGenerator'](agent.state, chosen.action);
+	agent.state = agent.func.stateGenerator(agent.state, chosen.action);
+
+	// Print the state
+	ql.isVerbose && agent.func.statePrint && agent.func.statePrint(agent.state);
 
 	return agent;
 }

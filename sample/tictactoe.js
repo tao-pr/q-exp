@@ -32,19 +32,21 @@ var ttt = {}
 
 ttt.agentVsAgent = function agentVsAgent(){
 	var alpha;
-	var b1 = '✅';
-	var b2 = '❌';
+	var b1 = '';
+	var b2 = '✓';
 	// Initialise bots
 	var bot1 = ql.newAgent('tictactoe-1',actionSet,alpha=0.35)
-		.then(ql.bindRewardMeasure(   ))
-		.then(ql.bindActionCostMeasure(   ))
-		.then(ql.bindStateGenerator(  ))
+		.then(ql.bindRewardMeasure( rewardOf(b1) ))
+		.then(ql.bindActionCostMeasure( costOfAct ))
+		.then(ql.bindStateGenerator( takeMove(b1) ))
+		.then(ql.bindStatePrinter( statePrint(b1,b2) ))
 		.then(ql.load('./agent'));
 
 	var bot2 = ql.newAgent('tictactoe-2',actionSet,alpha=0.35)
-		.then(ql.bindRewardMeasure(   ))
-		.then(ql.bindActionCostMeasure(   ))
-		.then(ql.bindStateGenerator(  ))
+		.then(ql.bindRewardMeasure( rewardOf(b2) ))
+		.then(ql.bindActionCostMeasure( costOfAct ))
+		.then(ql.bindStateGenerator( takeMove(b2) ))
+		.then(ql.bindStatePrinter( statePrint(b2,b1) ))
 		.then(ql.load('./agent'));
 
 	// Couple the two bots with sequence of operations
@@ -63,6 +65,51 @@ ttt.agentVsAgent = function agentVsAgent(){
 
 }
 
+
+function rewardOf(piece){
+	return function(state){
+		var mystate = state.split(':')[0];
+		var theirstate = state.split(':')[1];
+
+		if (mystate.length==0) return 0;
+		
+		// Measure the score based on how close we win
+		// or lose
+		var score = 0;
+		winningPatterns().forEach((pattern) => {
+
+			// Skip if winner has been decided
+			if (Math.abs(score)>=100) return;
+
+			pattern.forEach((act) => {
+				if (mystate.indexOf(act)>=0) agg++;
+				if (theirstate.indexOf(act)>=0) agg--;
+			})
+			
+			// Win?
+			if (agg==3) score = 100;
+			// Almost win?
+			else if (agg==2) score += 30;
+			// Lost?
+			if (agg==-3) score = -100;
+			// Almost lost?
+			else if (agg==-2) score -= 30;
+		})
+
+		return score;
+	}
+}
+
+
+function costOfAct(state,action){
+	// Invalid moves result minus value
+	if (state.indexOf(action)>=0) return -Infinity;
+
+	// Otherwise, we blindly guess the cost
+	return Math.random()*10;
+}
+
+
 function emptyBoard(){
 	return [[0,0,0],[0,0,0],[0,0,0]];
 }
@@ -74,8 +121,23 @@ function transpose(board){
 	return t;
 }
 
+function takeMove(piece){
+	return function(state,action){
+		// Convert the state back to a board
+		var board = stateToBoard(state,piece,'X');
+		// Take a move!
+		var move = actionToMove(action);
+
+		board[move[1]][move[0]] = piece;
+
+		// Convert the board back to the state and return
+		return boardToState(board,piece);
+	}
+}
+
 
 function actionToMove(a){
+
 	var m = a.match(/c*(\d)(\d)/);
 	return [m[1],m[2]];
 }
@@ -98,6 +160,21 @@ function boardToState(board,piece){
 }
 
 
+function statePrint(piece,theirPiece){
+	return function(state){
+		var board = stateToBoard(state,piece,theirPiece);
+		board.forEach((row) => {
+			var r = row.map((u) => 
+				u==piece ? u.green : 
+				u==theirPiece ? u.red :
+				'0'
+			);
+			console.log('   [' + r.join('-') + ']');
+		})
+	}
+}
+
+
 // Convert a state string back to a board
 function stateToBoard(state,piece,theirPiece){
 	var players = state.split(':');
@@ -106,6 +183,8 @@ function stateToBoard(state,piece,theirPiece){
 	var represent = [piece,theirPiece];
 
 	players.forEach((p,n) => {
+		if (p.length==0) return; // No move representation
+
 		p.split(',').forEach((action) => {
 			var move = actionToMove(action);
 			var i = move[0];
@@ -117,11 +196,8 @@ function stateToBoard(state,piece,theirPiece){
 	return board;
 }
 
-
-function isWonBy(board,piece){
-	var state = boardToState(board,piece).split(':')[0];
-	// Check the winning pattern
-	var patterns = [
+function winningPatterns(){
+	return [
 		['c00','c11','c22'], // diagonal
 		['c20','c11','c02'], // diagonal
 		['c00','c10','c20'], // first row
@@ -131,16 +207,13 @@ function isWonBy(board,piece){
 		['c11','c12','c13'], // second column
 		['c21','c22','c23']  // third column
 	];
-
-	// Won by any winning patterns?
-	return patterns.some((p) => 
-		!p.some((action) => state.indexOf(action)>=0)
-	);
 }
+
 
 function isAvailableToMove(board){
 	return !JSON.stringify(board).indexOf('0')>0;
 }
+
 
 
 // Start
