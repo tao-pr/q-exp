@@ -28,12 +28,11 @@ var actionSet = [
 ];
 
 var ttt = {}
-
+var b1 = '';
+var b2 = '✓';
 
 ttt.agentVsAgent = function agentVsAgent(){
 	var alpha;
-	var b1 = '';
-	var b2 = '✓';
 	// Initialise bots
 	var bot1 = ql.newAgent('tictactoe-1',actionSet,alpha=0.35)
 		.then(ql.bindRewardMeasure( rewardOf(b1) ))
@@ -53,18 +52,57 @@ ttt.agentVsAgent = function agentVsAgent(){
 	// TAOTODO:
 	var board = boardToState(emptyBoard(),b1);
 
-	// Let bot1 starts the game (1st turn)
-	bot1.then(ql.start(board));
-
-	// Repeatedly plays in a turn-based fashion
-	// until somebody wins, keeps the bot1 learning 
-	// from its move
-
-	// TAOTODO:
-	
-
+	// Let bot1 takes the first move
+	bot1.then(ql.start(board))
+		.then(handoverTo(bot2)) // Bot2 takes the next turn
 }
 
+
+function endGame(reward){
+	// TAOTODO:
+}
+
+function handoverTo(me){
+	return function(opponent){
+
+		console.log(me.name + ' now takes turn'.magenta);
+
+		// Get the current state
+		var state = flipSide(opponent.state);
+		var me = me.then(ql.setState(state));
+
+		// TAOTODO: The game has ended?
+		var reward = rewardOf(b1)(state);
+		if (Math.abs(reward)>=100){
+			// A winner has been decided!
+			// TAODEBUG:
+			console.log('WINNER HAS BEEN DECIDED!'.magenta)
+
+
+		}
+		else{
+			// Still in the game, just learn
+			// and move on
+			if (me.name=='tictactoe-1'){
+				me.then(ql.learn)
+					.then(ql.step)
+					.then(handoverTo(opponent)) 
+			}
+			else{
+				// Me takes the current state from opponent
+				// makes a new move
+				// then handover the turns
+				me.then(ql.step)
+					.then(handoverTo(opponent))
+			}
+		}
+	}
+}
+
+function flipSide(state,piece,theirPiece){
+	var board = stateToBoard(state,piece,theirPiece);
+	return boardToState(board,theirPiece);
+}
 
 function rewardOf(piece){
 	return function(state){
@@ -160,21 +198,6 @@ function boardToState(board,piece){
 }
 
 
-function statePrint(piece,theirPiece){
-	return function(state){
-		var board = stateToBoard(state,piece,theirPiece);
-		board.forEach((row) => {
-			var r = row.map((u) => 
-				u==piece ? u.green : 
-				u==theirPiece ? u.red :
-				'0'
-			);
-			console.log('   [' + r.join('-') + ']');
-		})
-	}
-}
-
-
 // Convert a state string back to a board
 function stateToBoard(state,piece,theirPiece){
 	var players = state.split(':');
@@ -195,6 +218,22 @@ function stateToBoard(state,piece,theirPiece){
 
 	return board;
 }
+
+
+function statePrint(piece,theirPiece){
+	return function(state){
+		var board = stateToBoard(state,piece,theirPiece);
+		board.forEach((row) => {
+			var r = row.map((u) => 
+				u==piece ? u.green : 
+				u==theirPiece ? u.red :
+				'0'
+			);
+			console.log('   [' + r.join('-') + ']');
+		})
+	}
+}
+
 
 function winningPatterns(){
 	return [
