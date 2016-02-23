@@ -81,6 +81,10 @@ function handoverTo(from,to)
 
 	// TAOTODO: The game has ended?
 	var reward = rewardOf(b1)(state);
+
+	// TAODEBUG:
+	console.log(to.name + ' perceives a state reward of : '.cyan + reward);
+
 	if (Math.abs(reward)>=100){
 		// A winner has been decided!
 		// TAODEBUG:
