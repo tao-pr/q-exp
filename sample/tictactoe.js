@@ -151,14 +151,21 @@ function botTake(bot,state){
 	}
 
 	// Check if the game has ended
-	var isEnd = !isAvailableToMove(state_);
+	var isEnd = !isAvailableToMove(state_) || Math.abs(reward)>=100;
+
 	Promise.resolve(bot)
 		.then(function(_bot) {
 			// If the game is over, skips
 			// Otherwise, the bot makes a move
 			return isEnd ? conclude(reward) : ql.step(_bot)
 		})
-		.then(humanTake) // Handover the board to human
+		.then((_bot) => {
+			// Game has ended?
+			var reward = rewardOf(_bot.state);
+			if (Math.abs(reward)>=100) conclude(reward);
+			else if (!isAvailableToMove(_bot.state)) conclude(reward);
+			else humanTake(_bot);  // Handover to human
+		})
 		.catch((e) => {
 			if (e!='Game Ended'){
 				console.error('FATAL '.red + e);
