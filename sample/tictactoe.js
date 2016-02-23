@@ -75,8 +75,7 @@ function endGame(reward){
 	// TAOTODO:
 }
 
-function handoverTo(from,to)
-{
+function handoverTo(from,to){
 	console.log(to.name.green + ' now takes turn'.magenta);
 
 	// Get the current state
@@ -86,7 +85,6 @@ function handoverTo(from,to)
 	// TAOTODO: The game has ended?
 	var reward = rewardOf(b1)(state);
 
-	// TAODEBUG:
 	console.log(to.name.green + ' perceives a state reward of : '.cyan + reward);
 
 	if (Math.abs(reward)>=100){
@@ -101,10 +99,14 @@ function handoverTo(from,to)
 		// and move on
 		if (me.name=='tictactoe-1'){
 			var opponent = from;
-			Promis.resolve(me)
+			Promise.resolve(me)
 				.then(ql.learn)
 				.then(ql.step)
 				.then((myself) => handoverTo(myself,opponent)) 
+				.catch((e) => {
+					console.error('BOT1 ERROR '.red + e);
+					console.error(e.stack)
+				})
 		}
 		else{
 			// Me takes the current state from opponent
@@ -114,6 +116,10 @@ function handoverTo(from,to)
 			Promise.resolve(me)
 				.then(ql.step)
 				.then((myself) => handoverTo(myself,opponent))
+				.catch((e) => {
+					console.error('BOT2 ERROR '.red + e);
+					console.error(e.stack)
+				})
 		}
 	}
 }
