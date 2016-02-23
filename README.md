@@ -22,6 +22,29 @@ the Promise. This makes life easier for pipelining the sequential
 processes or operations for readability and manageability and, 
 foremostly, side-effect-free paradigm.
 
+## Sample pipeline of operations
+
+To create an agent, load its learned policy from a physical file, 
+then let it choose an action which it *believes* it would 
+maximise the reward it would get, you may do this:
+
+```javascript
+// Initialisation
+var agent = ql
+	.newAgent('johndoe',actionSet=['walk','run','sleep'],alpha=0.35)
+	.then(ql.bindRewardMeasure( /* reward function here */ ))
+	.then(ql.bindActionCostMeasure( /* action cost function here */ ))
+	.then(ql.bindStateGenerator( /* state generator here */ ))
+	.then(ql.load('./dir')); 
+
+// Start!
+agent.then(ql.setState(initialState)) // Let the agent know the state
+	.then(ql.step) // Ask the agent to move
+	.then(ql.getState) // Now let's see how the agent moved
+	.then((state) => /* Do something with the state */)
+
+```
+
 
 ## Licence
 
