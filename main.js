@@ -247,10 +247,6 @@ ql.getState = function(agent){
  */
 ql.learn = function(agent){
 
-	// TAODEBUG:
-	console.log('history:'.cyan);
-	console.log(agent.history)
-
 	// NOTE:
 	// Last history       = perceived environmental state after a move
 	// Preceeding of last = A move the agent took
@@ -269,7 +265,7 @@ ql.learn = function(agent){
 	}
 
 	if (lastMove.action == null){
-		return Promise.reject('Agent should ')
+		return Promise.reject('Agent should perceive the current state after its recent move.')
 	}
 
 	var reward0 = agent.func.rewardOfState(lastMove.state);
