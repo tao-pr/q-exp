@@ -32,6 +32,24 @@ var ttt = {}
 var b1 = '';
 var b2 = '✓';
 
+ttt.agentVsHuman = function agentVsHuman(){
+	var alpha;
+	// Initialise bot & human handler
+	var bot = ql.newAgent('tictactoe-1',actionSet,alpha=0.44)
+		.then(ql.bindRewardMeasure( rewardOf(b1) ))
+		.then(ql.bindActionCostMeasure( costOfAct ))
+		.then(ql.bindStateGenerator( humanMove ))
+		.then(ql.bindStatePrinter( statePrint(b1,b2) ))
+		.then(ql.load('./agent'));
+
+	// Bot starts the game
+	bot.then(ql.start(board))
+		.then((_bot) => {
+			// Human takes the next move
+			// TAOTODO:
+		})
+}
+
 ttt.agentVsAgent = function agentVsAgent(){
 	var alpha;
 	// Initialise bots
