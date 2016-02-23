@@ -12,6 +12,7 @@ var fs = require('fs');
 
 ql.isVerbose = true; // Make sure it's gonna go verbose
 
+var isVsHuman = process.argv.splice(2).indexOf('play')>=0;
 
 /*-----------------
  * c00 | c10 | c20
@@ -31,6 +32,23 @@ var actionSet = [
 var ttt = {}
 var b1 = '';
 var b2 = '✓';
+
+ttt.agentVsHuman = function agentVsHuman(){
+	var alpha;
+	// Initialise bot & human handler
+	var bot = ql.newAgent('tictactoe-1',actionSet,alpha=0.44)
+		.then(ql.bindRewardMeasure( rewardOf(b1) ))
+		.then(ql.bindActionCostMeasure( costOfAct ))
+		.then(ql.bindStateGenerator( takeMove(b1) ))
+		.then(ql.bindStatePrinter( statePrint(b1,b2) ))
+		.then(ql.load('./agent'));
+
+	var board = boardToState(emptyBoard(),b1);
+
+	// Bot starts the game
+	bot.then(ql.start(board))
+		.then(humanTake); // Human takes the next turn
+}
 
 ttt.agentVsAgent = function agentVsAgent(){
 	var alpha;
@@ -71,6 +89,94 @@ ttt.agentVsAgent = function agentVsAgent(){
 		})
 }
 
+function humanTake(bot){
+	// Human takes the next move
+	console.log('HUMAN takes a move'.magenta);
+	var state = flipSide(bot.state);
+	var board = stateToBoard(state,b2,b1);
+
+	// Print the board
+	board.map((row,j) => {
+		console.log('   ' + row.map((c,i) => 
+			c == 0 ? `[ ${i}${j}]`.white :
+			c == b1 ? '[ ' + c.red + ' ]' :
+			'[ ' + c.green + ' ]'
+		).join('-'))
+	})
+
+	// TAOTODO: Prompt
+	prompt.start();
+	prompt.get(['move'], (err,res) => {
+		console.log('You picked: '.yellow + res['move']);
+
+		// Apply an action
+		var action = 'c' + res['move'];
+
+		var state_ = takeMove(b1)(state,action);
+
+		// TAODEBUG:
+		////statePrint(b2,b1)(state_);
+
+		// Switch over to bot
+		botTake(bot,state_);
+	})
+}
+
+function botTake(bot,state){
+	console.log('Bot takes a move'.magenta);
+
+	// Get the current state
+	var state_ = flipSide(state);
+	bot = ql.setState(state_)(bot);	
+	var reward = rewardOf(b1)(state_);
+
+	console.log('Bot perceives a state reward of : '.cyan + reward);
+
+	// Conclude the game
+	function conclude(reward){
+		if (Math.abs(reward)>=100 || isEnd){
+			// The game has ended
+			if (reward>=100){
+				console.log('¬¬¬¬¬¬ BOT WON! ¬¬¬¬¬¬ '.red)
+			}
+			else if (reward<=-100){
+				console.log('¬¬¬¬¬¬ YOU WON! ¬¬¬¬¬¬ '.green)	
+			}
+			else{
+				console.log('¬¬¬¬¬¬ DRAW! ¬¬¬¬¬¬ '.cyan)
+			}
+		}
+
+		return Promise.reject('Game Ended');
+	}
+
+	// Check if the game has ended
+	var isEnd = !isAvailableToMove(state_) || Math.abs(reward)>=100;
+
+	Promise.resolve(bot)
+		.then(function(_bot) {
+			// If the game is over, skips
+			// Otherwise, the bot makes a move
+			return isEnd ? conclude(reward) : ql.step(_bot)
+		})
+		.then((_bot) => {
+			// Game has ended?
+			var reward = rewardOf(_bot.state);
+			if (Math.abs(reward)>=100) conclude(reward);
+			else if (!isAvailableToMove(_bot.state)) conclude(reward);
+			else humanTake(_bot);  // Handover to human
+		})
+		.catch((e) => {
+			if (e!='Game Ended'){
+				console.error('FATAL '.red + e);
+				console.error(e);
+			}
+		})
+}
+
+/**
+ * Turn handover between bots
+ */
 function handoverTo(from,to){
 	console.log(to.name.green + ' now takes turn'.magenta);
 
@@ -81,7 +187,7 @@ function handoverTo(from,to){
 
 	console.log(to.name.green + ' perceives a state reward of : '.cyan + reward);
 
-	// Check if the game draws
+	// Check if the game has ended
 	var isEnd = !isAvailableToMove(state);
 
 	if (Math.abs(reward)>=100 || isEnd){
@@ -295,4 +401,4 @@ function isAvailableToMove(state){
 
 
 // Start
-ttt.agentVsAgent();
+isVsHuman ? ttt.agentVsHuman() : ttt.agentVsAgent();
