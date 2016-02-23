@@ -70,29 +70,34 @@ ttt.agentVsAgent = function agentVsAgent(){
 		})
 }
 
-
-function endGame(reward){
-	// TAOTODO:
-}
-
 function handoverTo(from,to){
 	console.log(to.name.green + ' now takes turn'.magenta);
 
 	// Get the current state
 	var state = flipSide(from.state);
 	var me = ql.setState(state)(to);	
-
-	// TAOTODO: The game has ended?
 	var reward = rewardOf(b1)(state);
 
 	console.log(to.name.green + ' perceives a state reward of : '.cyan + reward);
 
 	if (Math.abs(reward)>=100){
 		// A winner has been decided!
-		// TAODEBUG:
-		console.log('WINNER HAS BEEN DECIDED!'.magenta)
+		if (me.name=='tictactoe-1'){
+			if (reward >= 100) console.log('TICTACTOE-1 WON!'.green);
+			else if (reward <= -100) console.log('TICTACTOE-1 LOST!'.red);
 
-
+			// Learn from its recent move
+			Promise.resolve(me)
+				.then(ql.learn)
+				// TAOTODO: Save the bot
+		}
+		else{
+			// Skip this turn, and handover to the bot1
+			console.log('skips the turn'.magenta)
+			var opponent = from;
+			Promise.resolve(me)
+				.then((myself) => handoverTo(myself,opponent)) 
+		}
 	}
 	else{
 		// Still in the game, just learn
