@@ -94,7 +94,8 @@ function handoverTo(from,to){
 			// Learn from its recent move
 			Promise.resolve(me)
 				.then(ql.learn)
-				// TAOTODO: Save the bot
+				.then(ql.save('./agent'))
+				.then(ql.saveAs('./agent/tictactoe-2'))
 		}
 		else{
 			// Skip this turn, and handover to the bot1
@@ -143,9 +144,6 @@ function rewardOf(piece){
 	return function(state){
 		var mystate = state.split(':')[0];
 		var theirstate = state.split(':')[1];
-
-		// TAODEBUG:
-		console.log('mystate = ' + mystate)
 
 		if (mystate.length==0) return 0;
 		
@@ -281,9 +279,9 @@ function winningPatterns(){
 		['c00','c10','c20'], // first row
 		['c01','c11','c21'], // second row
 		['c02','c12','c22'], // third row
-		['c01','c02','c03'], // first column
-		['c11','c12','c13'], // second column
-		['c21','c22','c23']  // third column
+		['c00','c01','c02'], // first column
+		['c10','c11','c12'], // second column
+		['c20','c21','c22']  // third column
 	];
 }
 

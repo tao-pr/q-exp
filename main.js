@@ -68,10 +68,21 @@ ql.clearHistory = function(agent){
 
 /**
  * Save the learned policy to a physical file
+ *  the name of the agent is used as the file name
  */
 ql.save = function(path){
 	return function(agent){
 		fs.writeFile(`${path}/${agent.name}.agent`,JSON.stringify(agent.policy));
+		return Promise.resolve(agent);
+	}
+}
+
+/**
+ * As the learned policy as a specified file
+ */
+ql.saveAs = function(fullpath){
+	return function(agent){
+		fs.writeFile(`${fullpath}.agent`,JSON.stringify(agent.policy));
 		return Promise.resolve(agent);
 	}
 }
@@ -142,7 +153,6 @@ ql.__updatePolicy = function(state,action,rewardAddUp){
 
 		// Resort the policy (higher reward comes first)
 		agent.policy[state] = _.sortBy(agent.policy[state],(s)=>-s.reward);
-
 		return Promise.resolve(agent)
 	}
 }
@@ -274,7 +284,7 @@ ql.learn = function(agent){
 
 	// Learn from mistake, update the policy
 	ql.isVerbose && console.log(agent.name + ' learning new policy ...'.cyan + delta.toFixed(2));
-	ql.__updatePolicy(agent, lastMove.state, lastMove.action, delta);
+	ql.__updatePolicy(lastMove.state, lastMove.action, delta)(agent);
 
 	return agent;
 }
