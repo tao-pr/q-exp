@@ -208,7 +208,13 @@ ql.__exploreNext = function(state){
 		// List all actions and try
 		var rewards = agent.actionset.map(function(a){
 			// Predict the reward we would get
-			return {action: a, reward: ql.__q(state,a)(agent)}
+			var q = ql.__q(state,a)(agent);
+			
+			// If the predicted reward remains zero,
+			// apply some uncertainty noise
+			if (q==0) q += Math.random();
+
+			return {action: a, reward: q}
 		})
 
 		// Sort the actions by rewards (higher first)
