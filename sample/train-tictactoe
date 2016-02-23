@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Batch train the tic-tac-toe bot
+
+for i in `seq 1 30`;
+do
+	echo -e "\033[1m"
+	echo "————————————————————————"
+	echo "GAME #$i"
+	echo "————————————————————————"
+	echo -e "\033[0m"
+	node tictactoe.js
+done
