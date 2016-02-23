@@ -91,7 +91,7 @@ ttt.agentVsAgent = function agentVsAgent(){
 
 function humanTake(bot){
 	// Human takes the next move
-	console.log('HUMAN takes a move'.cyan);
+	console.log('HUMAN takes a move'.magenta);
 	var state = flipSide(bot.state);
 	var board = stateToBoard(state,b2,b1);
 
@@ -115,8 +115,56 @@ function humanTake(bot){
 		var state_ = takeMove(b1)(state,action);
 
 		// TAODEBUG:
-		statePrint(b2,b1)(state_);
+		////statePrint(b2,b1)(state_);
+
+		// Switch over to bot
+		botTake(bot,state_);
 	})
+}
+
+function botTake(bot,state){
+	console.log('Bot takes a move'.magenta);
+
+	// Get the current state
+	var state_ = flipSide(state);
+	bot = ql.setState(state_)(bot);	
+	var reward = rewardOf(b1)(state_);
+
+	console.log('Bot perceives a state reward of : '.cyan + reward);
+
+	// Conclude the game
+	function conclude(reward){
+		if (Math.abs(reward)>=100 || isEnd){
+			// The game has ended
+			if (reward>=100){
+				console.log('¬¬¬¬¬¬ BOT WON! ¬¬¬¬¬¬ '.red)
+			}
+			else if (reward<=-100){
+				console.log('¬¬¬¬¬¬ YOU WON! ¬¬¬¬¬¬ '.green)	
+			}
+			else{
+				console.log('¬¬¬¬¬¬ DRAW! ¬¬¬¬¬¬ '.cyan)
+			}
+		}
+
+		return Promise.reject('Game Ended');
+	}
+
+	// Check if the game has ended
+	var isEnd = !isAvailableToMove(state_);
+	Promise.resolve(bot)
+		.then(function(_bot) {
+			// If the game is over, skips
+			// Otherwise, the bot makes a move
+			return isEnd ? conclude(reward) : ql.step(_bot)
+		})
+		.then(humanTake) // Handover the board to human
+		.catch((e) => {
+			if (e!='Game Ended'){
+				console.error('FATAL '.red + e);
+				console.error(e);
+			}
+		})
 }
 
 /**
@@ -132,7 +180,7 @@ function handoverTo(from,to){
 
 	console.log(to.name.green + ' perceives a state reward of : '.cyan + reward);
 
-	// Check if the game draws
+	// Check if the game has ended
 	var isEnd = !isAvailableToMove(state);
 
 	if (Math.abs(reward)>=100 || isEnd){
