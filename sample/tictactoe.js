@@ -51,11 +51,18 @@ ttt.agentVsAgent = function agentVsAgent(){
 	var board = boardToState(emptyBoard(),b1);
 
 	// Start the game
-	bot1
-		.then(ql.start(board))
-		.then(function(b){
-			var turnFrom = handoverTo(bot2);
-			return Promise.resolve(turnFrom(b))
+	Promise.all([bot1,bot2])
+		.then(function(bots){
+			let bot1 = bots[0];
+			let bot2 = bots[1];
+
+			// Bot1 makes the first move of the game
+			Promise.resolve(bot1)
+				.then(ql.start(board))
+				.then((_bot1) => {
+					// Bot2 takes the next move
+					handoverTo(_bot1,bot2)
+				})
 		})
 }
 
@@ -64,39 +71,39 @@ function endGame(reward){
 	// TAOTODO:
 }
 
-function handoverTo(me){
-	return function(opponent){
+function handoverTo(from,to)
+{
+	console.log(to.name + ' now takes turn'.magenta);
 
-		console.log(me.name + ' now takes turn'.magenta);
+	// Get the current state
+	var state = flipSide(from.state);
+	var me = to.then(ql.setState(state));
 
-		// Get the current state
-		var state = flipSide(opponent.state);
-		var me = me.then(ql.setState(state));
-
-		// TAOTODO: The game has ended?
-		var reward = rewardOf(b1)(state);
-		if (Math.abs(reward)>=100){
-			// A winner has been decided!
-			// TAODEBUG:
-			console.log('WINNER HAS BEEN DECIDED!'.magenta)
+	// TAOTODO: The game has ended?
+	var reward = rewardOf(b1)(state);
+	if (Math.abs(reward)>=100){
+		// A winner has been decided!
+		// TAODEBUG:
+		console.log('WINNER HAS BEEN DECIDED!'.magenta)
 
 
+	}
+	else{
+		// Still in the game, just learn
+		// and move on
+		if (me.name=='tictactoe-1'){
+			var opponent = from;
+			me.then(ql.learn)
+				.then(ql.step)
+				.then((myself) => handoverTo(myself,opponent)) 
 		}
 		else{
-			// Still in the game, just learn
-			// and move on
-			if (me.name=='tictactoe-1'){
-				me.then(ql.learn)
-					.then(ql.step)
-					.then(handoverTo(opponent)) 
-			}
-			else{
-				// Me takes the current state from opponent
-				// makes a new move
-				// then handover the turns
-				me.then(ql.step)
-					.then(handoverTo(opponent))
-			}
+			// Me takes the current state from opponent
+			// makes a new move
+			// then handover the turns
+			var opponent = from;
+			me.then(ql.step)
+				.then((myself) => handoverTo(myself,opponent))
 		}
 	}
 }
