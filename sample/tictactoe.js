@@ -12,6 +12,7 @@ var fs = require('fs');
 
 ql.isVerbose = true; // Make sure it's gonna go verbose
 
+var isVsHuman = process.argv.splice(2).indexOf('play')>=0;
 
 /*-----------------
  * c00 | c10 | c20
@@ -38,16 +39,15 @@ ttt.agentVsHuman = function agentVsHuman(){
 	var bot = ql.newAgent('tictactoe-1',actionSet,alpha=0.44)
 		.then(ql.bindRewardMeasure( rewardOf(b1) ))
 		.then(ql.bindActionCostMeasure( costOfAct ))
-		.then(ql.bindStateGenerator( humanMove ))
+		.then(ql.bindStateGenerator( takeMove(b1) ))
 		.then(ql.bindStatePrinter( statePrint(b1,b2) ))
 		.then(ql.load('./agent'));
 
+	var board = boardToState(emptyBoard(),b1);
+
 	// Bot starts the game
 	bot.then(ql.start(board))
-		.then((_bot) => {
-			// Human takes the next move
-			// TAOTODO:
-		})
+		.then(humanTake); // Human takes the next turn
 }
 
 ttt.agentVsAgent = function agentVsAgent(){
@@ -89,6 +89,39 @@ ttt.agentVsAgent = function agentVsAgent(){
 		})
 }
 
+function humanTake(bot){
+	// Human takes the next move
+	console.log('HUMAN takes a move'.cyan);
+	var state = flipSide(bot.state);
+	var board = stateToBoard(state,b2,b1);
+
+	// Print the board
+	board.map((row,j) => {
+		console.log('   ' + row.map((c,i) => 
+			c == 0 ? `[ ${i}${j}]`.white :
+			c == b1 ? '[ ' + c.red + ' ]' :
+			'[ ' + c.green + ' ]'
+		).join('-'))
+	})
+
+	// TAOTODO: Prompt
+	prompt.start();
+	prompt.get(['move'], (err,res) => {
+		console.log('You picked: '.yellow + res['move']);
+
+		// Apply an action
+		var action = 'c' + res['move'];
+
+		var state_ = takeMove(b1)(state,action);
+
+		// TAODEBUG:
+		statePrint(b2,b1)(state_);
+	})
+}
+
+/**
+ * Turn handover between bots
+ */
 function handoverTo(from,to){
 	console.log(to.name.green + ' now takes turn'.magenta);
 
@@ -313,4 +346,4 @@ function isAvailableToMove(state){
 
 
 // Start
-ttt.agentVsAgent();
+isVsHuman ? ttt.agentVsHuman() : ttt.agentVsAgent();
