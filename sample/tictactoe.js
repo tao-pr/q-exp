@@ -6,6 +6,7 @@
 
 var colors = require('colors');
 var prompt = require('prompt');
+var _  = require('underscore');
 var ql = require('../main.js');
 var fs = require('fs');
 
@@ -80,11 +81,15 @@ function handoverTo(from,to){
 
 	console.log(to.name.green + ' perceives a state reward of : '.cyan + reward);
 
-	if (Math.abs(reward)>=100){
+	// Check if the game draws
+	var isEnd = !isAvailableToMove(state);
+
+	if (Math.abs(reward)>=100 || isEnd){
 		// A winner has been decided!
 		if (me.name=='tictactoe-1'){
 			if (reward >= 100) console.log('TICTACTOE-1 WON!'.green);
 			else if (reward <= -100) console.log('TICTACTOE-1 LOST!'.red);
+			else console.log('TICTACTOE-1 DREW'.silver);
 
 			// Learn from its recent move
 			Promise.resolve(me)
@@ -280,8 +285,10 @@ function winningPatterns(){
 }
 
 
-function isAvailableToMove(board){
-	return !JSON.stringify(board).indexOf('0')>0;
+function isAvailableToMove(state){
+	var validMoves = _.reject(state.split(/,|:/),_.isEmpty);
+	var numMoves   = validMoves.length;
+	return numMoves < 9;
 }
 
 
