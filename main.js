@@ -245,35 +245,42 @@ ql.getState = function(agent){
  * This should be called after `ql.step`
  * and then `ql.setState` strictly
  */
-ql.learn = function(){
-	return function(agent){
-		// History primary validations
-		if (agent.history.length<2){
-			return Promise.reject('Agent has not yet made any steps.');
-		}
+ql.learn = function(agent){
 
-		if (_.last(agent.history).action==null){
-			return Promise.reject('Agent needs to step first.');
-		}
+	// TAODEBUG:
+	console.log('history:'.cyan);
+	console.log(agent.history)
 
-		if (agent.history[agent.history-2].action != null){
-			return Promise.reject('The state before taking an action is missing.')
-		}
+	// NOTE:
+	// Last history       = perceived environmental state after a move
+	// Preceeding of last = A move the agent took
 
-		// Take the sequence for computation
-		var before = agent.history[agent.history.length-2];
-		var after  = agent.history[agent.history.length-1];
-
-		var reward0 = agent.func.rewardOfState(before);
-		var reward1 = agent.func.rewardOfState(after);
-		var delta   = agent.alpha * (reward1 - reward0);
-
-		// Learn from mistake, update the policy
-		ql.isVerbose && console.log(agent.name + ' learning new policy ...'.cyan + delta.toFixed(2));
-		ql.__updatePolicy(agent, before.state, after.action, delta);
-
-		return agent;
+	// History primary validations
+	if (agent.history.length<2){
+		return Promise.reject('Agent has not yet made any steps.');
 	}
+
+	var L = agent.history.length;
+	var lastMove     = agent.history[L-2];
+	var currentState = agent.history[L-1];
+
+	if (currentState.action!=null){
+		return Promise.reject('Agent needs to update the current state after a move.');
+	}
+
+	if (lastMove.action == null){
+		return Promise.reject('Agent should ')
+	}
+
+	var reward0 = agent.func.rewardOfState(lastMove.state);
+	var reward1 = agent.func.rewardOfState(currentState.state);
+	var delta   = agent.alpha * (reward1 - reward0);
+
+	// Learn from mistake, update the policy
+	ql.isVerbose && console.log(agent.name + ' learning new policy ...'.cyan + delta.toFixed(2));
+	ql.__updatePolicy(agent, lastMove.state, lastMove.action, delta);
+
+	return agent;
 }
 
 
