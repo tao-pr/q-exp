@@ -23,27 +23,45 @@ zero (theoretically). Each of the operation takes an input,
 processes on its own, then passes over the output to 
 the next operation over Promise.
 
-**The sample pipeline can be written as follows.**
+## Dependencies
+
+Since the library is built with `npm`, you can have all 
+its dependencies installed and ready with a simple command.
+
+```bash
+	$ npm install
+```
+
+Preferrable versions:
+
+	- [x] NPM 2.14 or newer
+	- [x] node 4.2 or newer
+
+**Caveat:** The older versions of `node` are not guaranteed 
+working due to the extensive use of ES6 syntaxes.
+
+## Sample pipeline usage
+
+A quick sample of playing `tic-tac-toe` game with 
+some strategies learned with Q-learning is shipped with 
+the library. You can find it under the `/sample` directory.
+
+#### To run a bot-vs-bot game
+
+Run the following command:
 
 ```
-ql.newAgent('johndoe',['walk','run','standstill'])
-	.then(ql.bindRewardMeasure(...))
-	.then(ql.bindActionCostMeasure(...))
-	.then(ql.bindStopCriteria(...)))
-	.then(ql.start('walking'));
+$ cd sample
+$ node tictactoe.js
 ```
 
-Each of the operation (represented in each individual line), 
-has absolutely no coupling dependencies with its proceeding 
-or succeeding piped operation at all. It just takes an input 
-(which is an agent instance), passes it over for processing.
+#### To train a batch of games
+
+We have the script ready for this:
+
+```
+$ cd sample
+$ ./train-tictactoe
+```
 
 
-## Prepare required functions
-
-Q-EXP requires you to prepare several fundamental auxilialy 
-functions as follows.
-
-[x] **ddd**
-[x] **ddd**
-[x] **ddd**
