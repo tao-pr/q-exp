@@ -8,6 +8,7 @@
 var colors = require('colors');
 var prompt = require('prompt');
 var ql = require('../main.js');
+var fs = require('fs');
 
 ql.isVerbose = true;
 
@@ -21,64 +22,77 @@ ql.isVerbose = true;
  *-----------------
 */
 
+var stateToStr = (s) => typeof(s)=='string' ? s : JSON.stringify(s);
+var strToState = (s) => typeof(s)=='string' ? JSON.parse(s) : s;
 
-var stateToStr = (s) => JSON.stringify(s);
-var strToState = (s) => JSON.parse(s);
+var applyAction = function(state,action,c){
 
-function applyAction(state,i,j,c){
+	// TAODEBUG:
+	console.log('Apply action'.yellow);
+	console.log(state);
+	console.log(action);
+
+	let act = action.match(/c*(\d)(\d)/);
+	let i = act[1];
+	let j = act[2];
 	state[j][i] = c;
 	return state;
 }
 
-function drawState(state){
+var drawState = function(state){
 	state.map((row) => {
 		console.log(row.map((c) => c==0 ? ' ' : c))
 	})
 }
 
-var stateGen = function(s,a){
-	// Get which cell to fill
-	var action = a.match(/c(\d)(\d)/);
-	var i = action[1];
-	var j = action[2];
+var stateGen = function(myspot,theirspot,opponentMove){
 
-	var state = strToState(s);
+	return function(s,a){
 
-	// Display the current state
-	console.log('[PREVIOUS BOARD]'.green);
-	drawState(state);
+		var state = strToState(s);
 
-	// Apply the agent's move
-	state = applyAction(state,i,j,'❌');
-	console.log('[APPLY] '.green + a);
-	console.log('[AFTER BOT MOVE]'.green);
-	drawState(state);
+		// Display the current state
+		console.log('[PREVIOUS BOARD]'.green);
+		drawState(state);
 
-	// Bot won?
-	if (stopCrit(stateToStr(state))){
-		console.log('[BOT ENDED THE GAME]'.green);
-		return Promise.resolve(stateToStr(state));
+		// Apply the agent's move
+		state = applyAction(state,a,myspot);
+		console.log('[APPLY ' + myspot + '] '.green + a);
+		console.log('[AFTER' + myspot + ' MOVE]'.green);
+		drawState(state);
+
+		// Bot won?
+		if (stopCrit(myspot,theirspot)(stateToStr(state))){
+			console.log('[' + myspot + ' ENDED THE GAME]'.green);
+			return Promise.resolve(stateToStr(state));
+		}
+
+		// Ask the opponent to generate the next move
+		return opponentMove(state,a);
 	}
+}
 
-	// Ask the user to input their choice
+/**
+ * Ask human player to generate the next state
+ * TAOTODO: Haven't tested
+ */
+var humanGenerateState = function(state){
 	prompt.start();
 	return new Promise((done,reject)=>
-
 		prompt.get(['move'],(err,res)=>{
 			// TAOTODO: valid move?
 
 			// Apply the move
-			let action = res.move.match(/c*(\d)(\d)/);
-			let i = action[1];
-			let j = action[2];
-			state = applyAction(state,i,j,'✅');
+			// Human always uses green check as their move symbol
+			state = applyAction(state,res.move,'✅'); 
 
 			console.log('[AFTER YOUR MOVE]'.green);
 			drawState(state);
 
 			// Human won?
-			if (stopCrit(stateToStr(state))){
-				console.log('[HUMAN ENDED THE GAME]!'.green);
+			let myspot = '✅', theirspot = '❌';
+			if (stopCrit(myspot,theirspot)(stateToStr(state))){
+				console.log('[YOU ENDED THE GAME]!'.green);
 			}
 
 			// Returns the generated state
@@ -86,42 +100,46 @@ var stateGen = function(s,a){
 		})
 	);
 }
-var rewardOfState = function(state){
-	state = strToState(state);
-	
-	// Reward = 1 if win
-	// Reward = -1 if lose
-	// Reward is higher if more close to win
-	var rows = state.map((row) => row.join(''));
-	var rowsT = state.map((row,j) => row.map((c,i)=>state[i][j]).join(''));
-	var diag = state.map((row,j) => row.map((c,i)=> i==j ? c : '').join('')).join('');
-	var diagT = state.map((row,j) => row.map((c,i)=> row.length-i-1==j ? c : '').join('')).join('');
 
-	rows = rows.concat(rowsT);
-	rows = rows.concat(diag);
-	rows = rows.concat(diagT);
+var rewardOfState = function(myspot,theirspot){	
 
-	function anyWin(_rows,c){
-		return _rows.some((row) => row.split('').filter((a) => a!=c).length==0);
+	return function(state){
+		state = strToState(state);
+
+		// Reward = 1 if win
+		// Reward = -1 if lose
+		// Reward is higher if more close to win
+		var rows = state.map((row) => row.join(''));
+		var rowsT = state.map((row,j) => row.map((c,i)=>state[i][j]).join(''));
+		var diag = state.map((row,j) => row.map((c,i)=> i==j ? c : '').join('')).join('');
+		var diagT = state.map((row,j) => row.map((c,i)=> row.length-i-1==j ? c : '').join('')).join('');
+
+		rows = rows.concat(rowsT);
+		rows = rows.concat(diag);
+		rows = rows.concat(diagT);
+
+		function anyWin(_rows,c){
+			return _rows.some((row) => row.split('').filter((a) => a!=c).length==0);
+		}
+		function anyCloseToWin(_rows,c){
+			return _rows.some((row) => 
+				row.split('').filter((a)=>a==c).length==row.length-1 &&
+				row.indexOf('0')>=0
+			)
+		}
+
+		// They win?
+		if (anyWin(rows,theirspot)) return 1;
+		// Me win?
+		if (anyWin(rows,myspot)) return -1;
+		// They are close to win?
+		if (anyCloseToWin(rows,theirspot)) return 0.8;
+		// Me close to win?
+		if (anyCloseToWin(rows,myspot)) return -0.8;
+
+		// Otherwise, random at minimal confidence (0~0.1)
+		return Math.random()/10;
 	}
-	function anyCloseToWin(_rows,c){
-		return _rows.some((row) => 
-			row.split('').filter((a)=>a==c).length==row.length-1 &&
-			row.indexOf('0')>=0
-		)
-	}
-
-	// Agent win?
-	if (anyWin(rows,'❌')) return 1;
-	// Human win?
-	if (anyWin(rows,'✅')) return -1;
-	// Agent close to win?
-	if (anyCloseToWin(rows,'❌')) return 0.8;
-	// Human close to win?
-	if (anyCloseToWin(rows,'✅')) return -0.8;
-
-	// Otherwise, random at minimal confidence (0~0.1)
-	return Math.random()/10;
 }
 
 var actionCost = function(state,a){
@@ -140,16 +158,19 @@ var actionCost = function(state,a){
 		return -Infinity;
 }
 
-var stopCrit = function(state){
+var stopCrit = function(myspot,theirspot){
 
-	// Somebody won?
-	var cost = rewardOfState(state)
-	console.log(` cost of current state = ${cost}`);
-	if (Math.abs(cost)>=1) return true;
-	
-	// Still there any space to move?
-	if (state.indexOf('0')>0) return false;
-	else return true;
+	return function(state){
+
+		// Somebody won?
+		var cost = rewardOfState(myspot,theirspot)(state);
+		console.log(` cost of current state = ${cost}`);
+		if (Math.abs(cost)>=1) return true;
+		
+		// Still there any space to move?
+		if (stateToStr(state).indexOf('0')>0) return false;
+		else return true;
+	}
 }
 
 // Initial variables
@@ -165,18 +186,68 @@ var actionSet = [
 	'c02','c12','c22'
 ];
 
-var alpha = 0.5;
+
+// Play against itself
+// but only the first bot will learn from its mistake
+function botVsBot(){
+	
+	// Prepare instances of two bots
+	let me, them, autoRecursion;
+	var bot1 = ql.newAgent('ox1',actionSet,autoRecursion=true)
+		.then(ql.bindRewardMeasure(rewardOfState(me='❌',them='✅')))
+		.then(ql.bindActionCostMeasure(actionCost))
+		.then(ql.bindStopCriteria(stopCrit(me='❌',them='✅')))
+		.then(ql.load('./agent'));
+
+	// @bot2 will only take an action and leave 
+	// the game for @bot1 to control
+	var bot2 = ql.newAgent('ox2',actionSet,autoRecursion=false)
+		.then(ql.bindStateGenerator(
+			stateGen(
+				me='✅',
+				them='❌',
+				(state,action) => Promise.resolve(stateToStr(applyAction(state,action,'✅')))
+			))
+		)
+		.then(ql.bindRewardMeasure(rewardOfState(me='✅',them='❌')))
+		.then(ql.bindActionCostMeasure(actionCost))
+		.then(ql.bindStopCriteria(stopCrit(me='✅',them='❌')))
+		.then(ql.load('./agent'));
+
+	// After having @bot2 initialised,
+	// bind the move transition to @bot1
+	bot1.then(ql.bindStateGenerator(stateGen(me='❌',them='✅',(state,action) => 
+		// Hand over to @bot2 to move
+		bot2.then(ql.step(state,action))
+	)))
 
 
-var game = ql
-	.newAgent('ox-agent',actionSet,stateGen,rewardOfState,actionCost)
-	.then(ql.load('.'))
-	.then(ql.start(initState,stopCrit,alpha))
-	.then(ql.save('.'))
-	.then((agent) =>
-		console.log('--TRAINED AGENT--'.cyan)
-	)
+	// Let two bots play each other!	
+	var alpha = 0.33;
+	var board = [
+		[0,0,0],
+		[0,0,0],
+		[0,0,0]
+	];
+
+	// Bot1 starts the game
+	bot1.then(ql.start(stateToStr(board))) 
+		.then(ql.save('./agent'))
+		.then((agent) => console.log(agent.name + ' HAS BEEN TRAINED!'.cyan))
+		.then(() => {
+			// Copy trained @bot1 as @bot2 for later play
+			fs.createReadStream('./agent/bot1.agent')
+				.pipe(fs.createWriteStream('./agent/ox2.agent'));
+			process.exit(0);
+		})
+}
+
+// Play a bot vs human
+function botVsHuman(){
+	// TAOTODO:
+}
 
 
-
+// Main function
+botVsBot();
 
