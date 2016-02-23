@@ -63,6 +63,10 @@ ttt.agentVsAgent = function agentVsAgent(){
 					// Bot2 takes the next move
 					handoverTo(_bot1,bot2)
 				})
+				.catch((e) => {
+					console.error('FATAL '.red + e);
+					console.error(e.stack);
+				})
 		})
 }
 
@@ -73,17 +77,17 @@ function endGame(reward){
 
 function handoverTo(from,to)
 {
-	console.log(to.name + ' now takes turn'.magenta);
+	console.log(to.name.green + ' now takes turn'.magenta);
 
 	// Get the current state
 	var state = flipSide(from.state);
-	var me = to.then(ql.setState(state));
+	var me = ql.setState(state)(to);	
 
 	// TAOTODO: The game has ended?
 	var reward = rewardOf(b1)(state);
 
 	// TAODEBUG:
-	console.log(to.name + ' perceives a state reward of : '.cyan + reward);
+	console.log(to.name.green + ' perceives a state reward of : '.cyan + reward);
 
 	if (Math.abs(reward)>=100){
 		// A winner has been decided!
@@ -97,7 +101,8 @@ function handoverTo(from,to)
 		// and move on
 		if (me.name=='tictactoe-1'){
 			var opponent = from;
-			me.then(ql.learn)
+			Promis.resolve(me)
+				.then(ql.learn)
 				.then(ql.step)
 				.then((myself) => handoverTo(myself,opponent)) 
 		}
@@ -106,15 +111,16 @@ function handoverTo(from,to)
 			// makes a new move
 			// then handover the turns
 			var opponent = from;
-			me.then(ql.step)
+			Promise.resolve(me)
+				.then(ql.step)
 				.then((myself) => handoverTo(myself,opponent))
 		}
 	}
 }
 
-function flipSide(state,piece,theirPiece){
-	var board = stateToBoard(state,piece,theirPiece);
-	return boardToState(board,theirPiece);
+function flipSide(state){
+	var sides = state.split(':');
+	return sides[1] + ':' + sides[0]
 }
 
 function rewardOf(piece){
@@ -132,6 +138,7 @@ function rewardOf(piece){
 			// Skip if winner has been decided
 			if (Math.abs(score)>=100) return;
 
+			let agg = 0;
 			pattern.forEach((act) => {
 				if (mystate.indexOf(act)>=0) agg++;
 				if (theirstate.indexOf(act)>=0) agg--;
