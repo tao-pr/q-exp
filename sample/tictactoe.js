@@ -144,6 +144,9 @@ function rewardOf(piece){
 		var mystate = state.split(':')[0];
 		var theirstate = state.split(':')[1];
 
+		// TAODEBUG:
+		console.log('mystate = ' + mystate)
+
 		if (mystate.length==0) return 0;
 		
 		// Measure the score based on how close we win
