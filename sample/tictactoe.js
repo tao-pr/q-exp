@@ -48,13 +48,15 @@ ttt.agentVsAgent = function agentVsAgent(){
 		.then(ql.bindStatePrinter( statePrint(b2,b1) ))
 		.then(ql.load('./agent'));
 
-	// Couple the two bots with sequence of operations
-	// TAOTODO:
 	var board = boardToState(emptyBoard(),b1);
 
-	// Let bot1 takes the first move
-	bot1.then(ql.start(board))
-		.then(handoverTo(bot2)) // Bot2 takes the next turn
+	// Start the game
+	bot1
+		.then(ql.start(board))
+		.then(function(b){
+			var turnFrom = handoverTo(bot2);
+			return Promise.resolve(turnFrom(b))
+		})
 }
 
 
