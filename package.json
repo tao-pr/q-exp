@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "description": "Q-learning :exploration-exploitation library",
   "main": "main.js",
+  "repository":{
+    "git": "https://github.com/starcolon/q-exp"
+  },
   "scripts": {
     "test": "mocha "
   },
