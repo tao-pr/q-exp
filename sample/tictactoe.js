@@ -104,18 +104,13 @@ function humanTake(bot){
 		).join('-'))
 	})
 
-	// TAOTODO: Prompt
 	prompt.start();
 	prompt.get(['move'], (err,res) => {
 		console.log('You picked: '.yellow + res['move']);
 
 		// Apply an action
 		var action = 'c' + res['move'];
-
 		var state_ = takeMove(b1)(state,action);
-
-		// TAODEBUG:
-		////statePrint(b2,b1)(state_);
 
 		// Switch over to bot
 		botTake(bot,state_);
