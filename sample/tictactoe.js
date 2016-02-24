@@ -155,8 +155,10 @@ function botTake(bot,state){
 			return isEnd ? conclude(reward) : ql.step(_bot)
 		})
 		.then((_bot) => {
+
+			var reward = rewardOf(b1)(_bot.state);
+
 			// Game has ended?
-			var reward = rewardOf(_bot.state);
 			if (Math.abs(reward)>=100) conclude(reward);
 			else if (!isAvailableToMove(_bot.state)) conclude(reward);
 			else humanTake(_bot);  // Handover to human
