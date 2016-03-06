@@ -6,6 +6,16 @@ called Q learning.  By fundamental design, Q-EXP stands
 for Q-learning Exploration-Exploitation, one among 
 common technical terms in reinforcement learning space.
 
+## Usage
+
+To include `q-exp` library to your **Node.js** app:
+
+```javascript
+var qexp = require('q-exp');
+```
+
+Read the instructions all the way down to learn how to use.
+
 ## Implementation
 
 This library is purely written in [ECMAScript 6](https://github.com/lukehoban/es6features) and runs 
