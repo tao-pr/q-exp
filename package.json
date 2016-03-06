@@ -1,6 +1,6 @@
 {
   "name": "q-exp",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Q-learning :exploration-exploitation library",
   "main": "main.js",
   "repository":{
