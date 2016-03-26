@@ -70,6 +70,7 @@ A quick sample implementation is a classic [tic-tac-toe game](https://en.wikiped
 	$ cd sample
 	$ node tictactoe.js play
 ```
+
 By Q-learning definition, the bot doesn't know the rule of 
 the game. Yet, it knows which moves may probably lead to victory 
 and which moves may likely introduce defeat. The bot may sometimes 

@@ -8,6 +8,7 @@ var fs      = require('fs');
 var Promise = require('bluebird');
 var _       = require('underscore');
 var colors  = require('colors');
+var State   = require('./state.js');
 var config  = require('./package.json');
 
 ql.isVerbose = true;
@@ -18,8 +19,9 @@ Promise.longStackTraces = true;
  * @param {String} name of the agent file to save or load
  * @param {Array} list of actions (string)
  * @param {Number} learning rate
+ * @param {String} generalisation method
  */
-ql.newAgent = function(name,actionset,alpha){
+ql.newAgent = function(name,actionset,alpha,generalisation){
 	var agent = {}
 	agent.name = name;
 	agent.actionset = actionset;
@@ -27,6 +29,7 @@ ql.newAgent = function(name,actionset,alpha){
 	agent.policy = {};
 	agent.alpha = alpha || 0.5;
 	agent.history = [];
+	agent.generalisation = generalisation || 'none';
 	return Promise.resolve(agent)
 }
 
