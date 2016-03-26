@@ -1,10 +1,14 @@
 # Q-EXP
 
-Hello! Here is a simple implementation of a form of 
-[reinforcement learning](http://www.cs.indiana.edu/~gasser/Salsa/rl.html) 
-called Q learning.  By fundamental design, Q-EXP stands 
-for Q-learning Exploration-Exploitation, one among 
-common technical terms in reinforcement learning space.
+[Reinforcement Learning](http://www.cs.indiana.edu/~gasser/Salsa/rl.html) 
+library for Node.js app. This implements Q-learning 
+technique for exploration-exploitation mechanic.
+
+## Installation
+
+```bash
+$ npm install q-exp
+```
 
 ## Usage
 
