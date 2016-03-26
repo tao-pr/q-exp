@@ -1,7 +1,7 @@
 {
   "name": "q-exp",
-  "version": "0.0.1",
-  "description": "Q-learning :exploration-exploitation library",
+  "version": "0.0.2",
+  "description": "Reinforcement learning (Q-Learning) library",
   "main": "main.js",
   "repository":{
     "git": "https://github.com/starcolon/q-exp"
