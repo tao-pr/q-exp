@@ -42,10 +42,10 @@ function gradientDescent(ϴ,states,rewards,nIters,alpha){
 
 	// Gradient of error:
 	// ∇(ϴ,S)    = δE(ϴ,S) δθ
-	∇ = gradientE(ϴ,states,rewards);
+	var G = gradientE(ϴ,states,rewards);
 
 	// Update the linear coeff by gradient
-	ϴ = ϴ.map((θ,i) => θ-alpha*∇[i]);
+	var ϴ = ϴ.map((θ,i) => θ-alpha*G[i]);
 
 	// Repeat
 	return gradientDescent(ϴ,states,rewards,nIters-1,alpha)
@@ -68,9 +68,9 @@ function gradientE(ϴ,states,rewards){
 		var gradE = (-2/N)*sumError(i)
 	}
 
-	∇ = ϴ.map(gradient);
-	console.log('   ∇ : '.yellow,∇);
-	return ∇;
+	var G = ϴ.map(gradient);
+	console.log('   ∇ : '.yellow,G);
+	return G;
 }
 
 
