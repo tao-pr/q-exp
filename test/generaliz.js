@@ -25,6 +25,19 @@ var R = [
 	0
 ]
 
-const maxIters = 20;
-const alpha = 0.2;
-Gen.fit(S,R,maxIters,alpha);
+const maxIters = 36;
+const alpha = 0.00001;
+var ϴ = Gen.fit(S,R,maxIters,alpha);
+
+// Comparison
+console.log('=============== VALIDATE =========='.green)
+var estimate  = Gen.estimate(ϴ);
+S.forEach((s,n) => {
+	var actualR = R[n];
+	var estR    = estimate(s);
+
+	console.log('#',n,' ',
+		'expected: '.green,actualR,' ',
+		'get : '.magenta,estR
+	);
+})
