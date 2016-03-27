@@ -10,10 +10,10 @@ var State     = require('./state.js');
 var colors    = require('colors');
 
 /**
- * Y = AX, where both X and Y are vectors
+ * R' = ϴX
  * x : state
- * y : estimated reward
- * a : affine transformation
+ * r : estimated reward
+ * ϴ : affine transformation
  */
 generaliz.fit = function(states,rewards,maxIters,alpha){
 	// Initialise linear coefficient vector
