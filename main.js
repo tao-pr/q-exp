@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * Simple Q-learning library for JavaScript ninja
  * @author StarColon Projects
@@ -132,22 +134,22 @@ ql.revealBrain = function(agent){
 
 /**
  * Update the policy from the observation
- * @param {Array} state
+ * @param {State} state
  * @param {String} action
  * @param {Number} reward value to add
  */
 ql.__updatePolicy = function(state,action,rewardAddUp){
 	return function(agent){
 		// Register a new state if haven't
-		if (!agent.policy.hasOwnProperty(state)){
-			agent.policy[state] = {}
-			agent.policy[state] = agent.actionset.map(function(a){
+		if (!agent.policy.hasOwnProperty(state.hash){
+			agent.policy[state.hash] = {}
+			agent.policy[state.hash] = agent.actionset.map(function(a){
 				return {action: a, reward: a==action ? rewardAddUp : 0}
 			})
 		}
 		else{
 			// State exists, update the action reward
-			agent.policy[state] = agent.policy[state].map(function(a){
+			agent.policy[state.hash] = agent.policy[state.hash].map(function(a){
 				if (a.action==action) 
 					return {action: action, reward: rewardAddUp};
 				else return {action:a.action, reward: a.reward}
@@ -155,7 +157,7 @@ ql.__updatePolicy = function(state,action,rewardAddUp){
 		}
 
 		// Resort the policy (higher reward comes first)
-		agent.policy[state] = _.sortBy(agent.policy[state],(s)=>-s.reward);
+		agent.policy[state.hash] = _.sortBy(agent.policy[state.hash],(s)=>-s.reward);
 		return Promise.resolve(agent)
 	}
 }
@@ -164,12 +166,12 @@ ql.__updatePolicy = function(state,action,rewardAddUp){
 
 /**
  * Explore the reward of the next state after applying an action
- * @param {String} current state
+ * @param {State} current state
  */
 ql.__rewardOf = function(state){
 
 	return function(agent){
-		return agent.func['rewardOfState'](state);
+		return agent.func['rewardOfState'](state.hash);
 	}
 }
 
@@ -186,9 +188,9 @@ ql.__q = function(state,action){
 			return cost;
 
 		// Do we have the state and action registered in the policy?
-		if (agent.policy.hasOwnProperty(state)){
+		if (agent.policy.hasOwnProperty(state.hash)){
 			// Yes, we have the state memorised
-			var _act = (agent.policy[state].filter((a) => a.action==action));
+			var _act = (agent.policy[state.hash].filter((a) => a.action==action));
 			if (_act.length==0)
 				return agent.funcactionCost(state,a);
 			else
@@ -227,7 +229,7 @@ ql.__exploreNext = function(state){
 
 /**
  * Start a new learning course of the agent
- * @param {String} initial state
+ * @param {State} initial state
  */
 ql.start = function(initState){
 	return function(agent){
@@ -316,8 +318,8 @@ ql.step = function(agent){
 	ql.isVerbose && console.log('generated actions:'.yellow);
 	ql.isVerbose && console.log(nexts);
 	
-	// Pick the best action (greedy tithering)
-	var chosen = nexts[0]; // TAOTODO: We may rely on other choices
+	// Greedily pick the best action
+	var chosen = nexts[0];
 	var currentReward = agent.func.rewardOfState(agent.state);
 
 	// Register the chosen action
