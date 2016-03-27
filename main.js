@@ -141,7 +141,7 @@ ql.revealBrain = function(agent){
 ql.__updatePolicy = function(state,action,rewardAddUp){
 	return function(agent){
 		// Register a new state if haven't
-		if (!agent.policy.hasOwnProperty(state.hash){
+		if (!agent.policy.hasOwnProperty(state.hash)){
 			agent.policy[state.hash] = {}
 			agent.policy[state.hash] = agent.actionset.map(function(a){
 				return {action: a, reward: a==action ? rewardAddUp : 0}

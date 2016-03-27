@@ -6,9 +6,10 @@
 
 var colors = require('colors');
 var prompt = require('prompt');
-var _  = require('underscore');
-var ql = require('../main.js');
-var fs = require('fs');
+var _      = require('underscore');
+var ql     = require('../main.js');
+var State  = require('../state.js');
+var fs     = require('fs');
 
 ql.isVerbose = true; // Make sure it's gonna go verbose
 
@@ -239,14 +240,14 @@ function handoverTo(from,to){
 }
 
 function flipSide(state){
-	var sides = state.split(':');
+	var sides = state.hash.split(':');
 	return sides[1] + ':' + sides[0]
 }
 
 function rewardOf(piece){
 	return function(state){
-		var mystate = state.split(':')[0];
-		var theirstate = state.split(':')[1];
+		var mystate = state.hash.split(':')[0];
+		var theirstate = state.hash.split(':')[1];
 
 		if (mystate.length==0) return 0;
 		
@@ -281,7 +282,7 @@ function rewardOf(piece){
 
 function costOfAct(state,action){
 	// Invalid moves result minus value
-	if (state.indexOf(action)>=0) return -Infinity;
+	if (state.hash.indexOf(action)>=0) return -Infinity;
 
 	// Otherwise, we blindly guess the cost
 	return Math.random()*10;
@@ -334,13 +335,14 @@ function boardToState(board,piece){
 		})
 	})
 
-	return a.join(',') + ':' + b.join(',');
+	var s = a.join(',') + ':' + b.join(',');
+	return new State([s]);
 }
 
 
 // Convert a state string back to a board
 function stateToBoard(state,piece,theirPiece){
-	var players = state.split(':');
+	var players = state.hash.split(':');
 	var board = emptyBoard();
 
 	var represent = [piece,theirPiece];
@@ -390,7 +392,7 @@ function winningPatterns(){
 
 
 function isAvailableToMove(state){
-	var validMoves = _.reject(state.split(/,|:/),_.isEmpty);
+	var validMoves = _.reject(state.hash.split(/,|:/),_.isEmpty);
 	var numMoves   = validMoves.length;
 	return numMoves < 9;
 }
