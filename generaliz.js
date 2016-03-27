@@ -14,14 +14,23 @@ var colors    = require('colors');
  * x : state
  * r : estimated reward
  * ϴ : affine transformation
+ *
+ * @param {List} of #State instance
+ * @param {List} of #number reward (in sync with @states)
+ * @param {Number} number of iterations to do
+ * @param {Number} learning rate (non-negative)
+ * @param {String} fitting method
  */
-generaliz.fit = function(states,rewards,maxIters,alpha){
+generaliz.fit = function(states,rewards,maxIters,alpha,method){
 	// Initialise linear coefficient vector
 	var dim = states[0].state.length;
 	var ϴ   = new Array(dim+1).fill(1);
 
 	// Iterate until ϴ converges
-	return gradientDescent(ϴ,states,rewards,maxIters,alpha)
+	if (method=='GD')
+		return gradientDescent(ϴ,states,rewards,maxIters,alpha)
+	else
+		return ϴ;
 }
 
 generaliz.estimate = function(ϴ){
