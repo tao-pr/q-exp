@@ -241,7 +241,7 @@ function handoverTo(from,to){
 
 function flipSide(state){
 	var sides = state.hash.split(':');
-	return sides[1] + ':' + sides[0]
+	return new State([sides[1] + ':' + sides[0]])
 }
 
 function rewardOf(piece){
