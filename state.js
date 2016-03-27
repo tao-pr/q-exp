@@ -10,12 +10,12 @@ class State{
 	 * @param {Array} of state parameters
 	 */
 	constructor(xs){
-		this.xs = []
+		this.xs = xs.slice()
 	}
 
 	static newZeroState(nParams){
-		xs = new Array(nParams).fill(0);
-		s  = new State(xs);
+		var xs = new Array(nParams).fill(0);
+		var s  = new State(xs);
 		return s
 	}
 
