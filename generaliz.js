@@ -6,7 +6,6 @@
  */
 
 var generaliz = {}
-var $_        = require('sylvester');
 var State     = require('./state.js');
 var colors    = require('colors');
 
@@ -19,10 +18,16 @@ var colors    = require('colors');
 generaliz.fit = function(states,rewards,maxIters,alpha){
 	// Initialise linear coefficient vector
 	var dim = states[0].state.length;
-	var ϴ   = $V(new Array(dim+1).fill(1))
+	var ϴ   = new Array(dim+1).fill(1);
 
 	// Iterate until ϴ converges
 	return gradientDescent(ϴ,states,rewards,maxIters,alpha)
+}
+
+generaliz.estimate = function(ϴ){
+	return function(state){
+		return state.state.reduce((sum,s,i) => s*ϴ[i],0)
+	}
 }
 
 /**
@@ -33,6 +38,7 @@ function gradientDescent(ϴ,states,rewards,nIters,alpha){
 		return ϴ;
 
 	console.log(`Iteration #${nIters}`.green);
+	console.log('   ϴ : '.yellow, ϴ);
 
 	// Simple Linear approximation:
 	// R`(ϴ,S) = θ0 + θ1s1 + θ2s2 + ... θNsN, N = dim(states)
@@ -45,27 +51,29 @@ function gradientDescent(ϴ,states,rewards,nIters,alpha){
 	var G = gradientE(ϴ,states,rewards);
 
 	// Update the linear coeff by gradient
-	var ϴ = ϴ.map((θ,i) => θ-alpha*G[i]);
+	var ϴ = ϴ.map((θ,i) => θ+alpha*G[i]);
 
 	// Repeat
 	return gradientDescent(ϴ,states,rewards,nIters-1,alpha)
 }
 
+// For linear combination ϴ
 function gradientE(ϴ,states,rewards){
 	var N = parseFloat(states.length);
 	// Error of n-th state sample
 	function E(n,i){ 
-		var Sn = [1].concat(states[n].state); // S[0] = 1
-		return rewards[n] - Sn.reduce((sum,s,k) => sum+s*ϴ[k],0);
+		var Sn = [1].concat(states[n].state); // Sn[0] = 1
+		return Sn[i]*(rewards[n] - ϴ.reduce((sum,θ,k) => sum+θ*Sn[k],0));
 	}
-	// Total δE/δ
+	// Total δE/δθi
 	function sumError(i){
 		var e = 0;
 		for (var n=0; n<N; n++) e += E(n,i);
+		console.log(`   sum E(θ${i}) = `.red + e) //TAODEBUG:
 		return e;
 	}
 	function gradient(θ,i){
-		var gradE = (-2/N)*sumError(i)
+		return (-2/N)*sumError(i);
 	}
 
 	var G = ϴ.map(gradient);
