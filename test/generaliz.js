@@ -14,7 +14,9 @@ var S = [
 	new State([2,5,7]),
 	new State([1,2,3]),
 	new State([0,3,2]),
-	new State([2,2,1])
+	new State([2,2,1]),
+	new State([1,1,1]),
+	new State([3,4,5])
 ]
 var R = [
 	3,
@@ -22,12 +24,14 @@ var R = [
 	10,
 	10,
 	3,
-	0
+	0,
+	0,
+	10
 ]
 
 const maxIters = 100;
 const alpha = 0.0001;
-var ϴ = Gen.fit(S,R,maxIters,alpha);
+var ϴ = Gen.fit(S,R,maxIters,alpha,'GD');
 
 // Comparison
 console.log('=============== VALIDATE =========='.green)
