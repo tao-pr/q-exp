@@ -25,8 +25,8 @@ var R = [
 	0
 ]
 
-const maxIters = 36;
-const alpha = 0.00001;
+const maxIters = 100;
+const alpha = 0.0001;
 var ϴ = Gen.fit(S,R,maxIters,alpha);
 
 // Comparison

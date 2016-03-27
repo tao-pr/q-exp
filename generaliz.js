@@ -51,7 +51,7 @@ function gradientDescent(ϴ,states,rewards,nIters,alpha){
 	var G = gradientE(ϴ,states,rewards);
 
 	// Update the linear coeff by gradient
-	var ϴ = ϴ.map((θ,i) => θ+alpha*G[i]);
+	var ϴ = ϴ.map((θ,i) => θ-alpha*G[i]);
 
 	// Repeat
 	return gradientDescent(ϴ,states,rewards,nIters-1,alpha)
@@ -69,7 +69,6 @@ function gradientE(ϴ,states,rewards){
 	function sumError(i){
 		var e = 0;
 		for (var n=0; n<N; n++) e += E(n,i);
-		console.log(`   sum E(θ${i}) = `.red + e) //TAODEBUG:
 		return e;
 	}
 	function gradient(θ,i){
