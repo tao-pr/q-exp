@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * State space
  * @author StarColon Projects
@@ -24,16 +26,14 @@ class State{
 	/**
 	 * Get a hash-able string of the state
 	 */
-	get hash(){
-		return this.xs.join(',')
-	}
+	get hash(){ return this.xs.join(',') }
 
 	/**
 	 * Update the state
 	 */
-	set state(xs){
-		this.xs = xs.slice()
-	}
+	set state(xs){ this.xs = xs.slice() }
+
+	get state(){ return this.xs }
 }
 
 
