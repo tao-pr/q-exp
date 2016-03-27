@@ -3,7 +3,7 @@
   "version": "0.0.2",
   "description": "Reinforcement learning (Q-Learning) library",
   "main": "main.js",
-  "repository":{
+  "repository": {
     "git": "https://github.com/starcolon/q-exp"
   },
   "scripts": {
@@ -27,6 +27,7 @@
     "colors": "^1.1.2",
     "fs": "0.0.2",
     "prompt": "^1.0.0",
+    "sylvester": "0.0.21",
     "underscore": "^1.8.3"
   }
 }

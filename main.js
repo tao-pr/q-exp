@@ -196,6 +196,9 @@ ql.__q = function(state,action){
 				return _act[0].reward;
 		}
 		else{
+
+			// TAOTODO: Exploit generalisation for unseen state
+
 			// We don't know anything about the current state
 			// Guess it based on uniform distribution then
 			return cost;
