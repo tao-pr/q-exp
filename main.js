@@ -5,13 +5,14 @@
  * @author StarColon Projects
  */
 
-var ql      = {}
-var fs      = require('fs');
-var Promise = require('bluebird');
-var _       = require('underscore');
-var colors  = require('colors');
-var State   = require('./state.js');
-var config  = require('./package.json');
+var ql          = {}
+var fs          = require('fs');
+var Promise     = require('bluebird');
+var _           = require('underscore');
+var colors      = require('colors');
+var State       = require('./state.js');
+var Generalizer = require('./generaliz.js');
+var config      = require('./package.json');
 
 ql.isVerbose = true;
 Promise.longStackTraces = true;
@@ -21,9 +22,8 @@ Promise.longStackTraces = true;
  * @param {String} name of the agent file to save or load
  * @param {Array} list of actions (string)
  * @param {Number} learning rate
- * @param {String} generalisation method
  */
-ql.newAgent = function(name,actionset,alpha,generalisation){
+ql.newAgent = function(name,actionset,alpha){
 	var agent = {}
 	agent.name = name;
 	agent.actionset = actionset;
@@ -31,7 +31,6 @@ ql.newAgent = function(name,actionset,alpha,generalisation){
 	agent.policy = {};
 	agent.alpha = alpha || 0.5;
 	agent.history = [];
-	agent.generalisation = generalisation || 'none';
 	return Promise.resolve(agent)
 }
 
@@ -334,6 +333,16 @@ ql.step = function(agent){
 	ql.isVerbose && agent.func.statePrint && agent.func.statePrint(agent.state);
 
 	return agent;
+}
+
+
+/**
+ * Generalise the J* space
+ * based on the learned state-reward terrain
+ * @param {String} method of generalisation to exploit
+ */
+ql.generalize = function(method){
+	// TAOTODO:
 }
 
 
