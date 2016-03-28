@@ -345,7 +345,44 @@ ql.step = function(agent){
  * @param {String} method of generalisation to exploit
  */
 ql.generalize = function(method){
-	// TAOTODO:
+	
+	const maxIters = 100;
+	const alpha = 0.0001; // Keep it tiny for finest adjustment
+	method = method || 'GD'; // Gradient descent by default
+
+	return function(agent){
+		// Prepare mapping #action --> #reward 
+		var Qa = agent.actionset.map(function(a){
+			return {states:[], rewards:[]}
+		});
+
+		// Step through policy and collect
+		// rewards of each action
+		Object.keys(agent.policy).forEach((hash) => {
+			var state  = State.fromHash(hash);
+			// Iterate through each action and fill the space
+			agent.policy[hash].forEach((a,i) => {
+				var reward = agent.policy[hash][a];
+				Qa[i].states.push(state);
+				Qa[i].rewards.push(reward);
+			})
+		})
+
+		// By each action space, fit the parameterised ϴ 
+		var ϴspace = []
+		Qa.forEach((action,i) => {
+			var states = action.states;
+			var rewards = action.rewards;
+			var ϴi = Generalizer.fit(states,rewards,maxIters,alpha,method);
+
+			ϴspace[i] = ϴi;
+		})
+
+		// Now we have learned the entire J* space
+		// Let the agent memorised it for use
+		agent.ϴ = ϴspace;
+		return Promise.resolve(agent)
+	}
 }
 
 

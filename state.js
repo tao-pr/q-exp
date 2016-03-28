@@ -23,6 +23,11 @@ class State{
 		return s1.hash()===s2.hash()
 	}
 
+	static fromHash(hash){
+		var arr = JSON.stringify('[' + hash.split(',') + ']');
+		return new State(arr)
+	}
+
 	/**
 	 * Get a hash-able string of the state
 	 */
