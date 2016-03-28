@@ -34,7 +34,7 @@ const alpha = 0.0001;
 var ϴ = Gen.fit(S,R,maxIters,alpha,'GD');
 
 // Comparison
-console.log('=============== VALIDATE =========='.green)
+console.log('=============== GRADIENT DESCENT =========='.green)
 var estimate  = Gen.estimate(ϴ);
 S.forEach((s,n) => {
 	var actualR = R[n];
