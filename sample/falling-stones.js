@@ -19,7 +19,8 @@ const actionSet = [ // Character movement
 	'←','→','#' 
 ];
 
-const BOARD_SIZE = 5;
+const BOARD_SIZE = 7;
+const MAX_LESSONS = 20;
 
 /* 5x5          0
 	┏━━━━━┓
@@ -44,7 +45,25 @@ function initState(){
  * Perceived total reward of a state
  */
 function Q(state){
+	// Dies = -1
+	// Almost get hit = 0
+	// Still alive = 3
+	const SCORE_DIE = -1;
+	const SCORE_CLOSE_CALL = 0;
+	const SCORE_ALIVE = 3;
 
+	var myPos = state.state[0];
+	var ball1 = state.state.slice(1,3);
+	var ball2 = state.state.slice(3,5);
+
+	if ((myPos==ball1[0] && ball1[1]==BOARD_SIZE-1) ||
+		(myPos==ball2[0] && ball2[1]==BOARD_SIZE-1))
+		return SCORE_DIE;
+	if ((myPos==ball1[0] && ball1[1]==BOARD_SIZE-2) ||
+		(myPos==ball2[0] && ball2[1]==BOARD_SIZE-2))
+		return SCORE_CLOSE_CALL;
+	else
+		return SCORE_ALIVE;
 }
 
 function actionCost(state,a){
@@ -94,27 +113,42 @@ function render(state){
 
 	// Render the frame
 	var horz = '';
-	for (var i=0; i<BOARD_SIZE; i++) 
-		horz += '━'.cyan;
+	horz = (new Array(BOARD_SIZE*3)).fill('━'.cyan).join('')
 	console.log(horz);
-	for (var j=0; j<=BOARD_SIZE; j++){
-		horz = '';
+	for (var j=0; j<BOARD_SIZE; j++){
+		horz = ''+j;
 		for (var i=0; i<BOARD_SIZE; i++){
 			if (ball1[0]==i && ball1[1]==j)
-				horz += '⦷'.red;
+				horz += ' ⦷ '.red;
 			else if (ball2[0]==i && ball2[1]==j)
-				horz += '⦷'.blue;
-			else if (myPos==i && j==5)
-				horz += '😎';
+				horz += ' ⦷ '.blue;
+			else if (myPos==i && j==BOARD_SIZE-1)
+				horz += ' 😎 ';
 			else
-				horz += ' ';
+				horz += ' – ';
 		}
 		console.log(horz);
 	}
-	horz = '';
-	for (var i=0; i<BOARD_SIZE; i++) 
-		horz += '━'.cyan;
+	horz = (new Array(BOARD_SIZE*3)).fill('━'.cyan).join('')
 	console.log(horz);
+}
+
+function repeatMove(agent){
+	// Generate next move
+	agent.then(ql.step)
+		.then(function(_agent){
+			// Over?
+			var _state = _agent.state;
+			var _score = Q(_state);
+			if (_score<0){
+				console.log('❌❌❌ GAME OVER ❌❌❌');
+			}
+			else{
+				// Generate the next step
+				console.log('Generating next step...') // TAODEBUG:
+				return repeatMove(Promise.resolve(_agent))
+			}
+		})
 }
 
 var bot = ql.newAgent('bot',actionSet,alpha=0.22)
@@ -124,6 +158,23 @@ var bot = ql.newAgent('bot',actionSet,alpha=0.22)
 	.then(ql.bindStatePrinter(render));
 
 var board = initState();
+var nLessons = 0;
+var total = 0; // Total score
+var score = 0; // Recent score
 
 console.log('Initial location: '.green);
 render(board);
+
+// TAOTODO: keep playing until the bot dies over and over
+
+// Lesson time!
+bot = bot.then(ql.start(board));
+
+// Repeat until over
+repeatMove(bot)
+
+
+
+
+
+
