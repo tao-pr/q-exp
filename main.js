@@ -197,7 +197,17 @@ ql.__q = function(state,action){
 		}
 		else{
 
-			// TAOTODO: Exploit generalisation for unseen state
+			// Estimate cost from generalised model
+			if (agent.ϴ){
+				console.log('Recall policy from generalisation'.cyan);
+
+				var actionIndex = agent.actionset.indexOf(action);
+				var _state = [1].concat(state.state)
+				var _cost  = agent.ϴ[actionIndex].reduce((_c,θi,i) =>
+					_c + θi*_state[i]
+					,0)
+				return _cost;
+			}
 
 			// We don't know anything about the current state
 			// Guess it based on uniform distribution then
