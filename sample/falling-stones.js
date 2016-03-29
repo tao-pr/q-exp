@@ -177,6 +177,8 @@ function repeatMove(agent,nLessons,history){
 					console.log("");
 					console.log('  [Num moves until it dies]');
 					console.log('  ',history)
+
+					return _agent;
 				}
 			}
 			else{
@@ -202,10 +204,8 @@ render(board);
 
 // keep playing until the bot dies over and over
 
-// Lesson time!
+// Lesson time! // Repeat until over
 bot = bot.then(ql.start(board));
-
-// Repeat until over
 repeatMove(bot,nLessons,[])
 
 
