@@ -39,6 +39,8 @@ class State{
 	set state(xs){ this.xs = xs.slice() }
 
 	get state(){ return this.xs }
+
+	set(i,v){ this.xs[i] = v }
 }
 
 

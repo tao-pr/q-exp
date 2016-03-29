@@ -133,20 +133,40 @@ function render(state){
 	console.log(horz);
 }
 
-function repeatMove(agent){
+function repeatMove(agent,nLessons){
 	// Generate next move
-	agent.then(ql.step)
+	agent
+		.then(ql.perceiveState)
+		.then(ql.step)
+		.then(ql.perceiveState)
+		.then(ql.learn)
 		.then(function(_agent){
 			// Over?
 			var _state = _agent.state;
 			var _score = Q(_state);
 			if (_score<0){
 				console.log('❌❌❌ GAME OVER ❌❌❌');
+				nLessons++;
+
+				if (nLessons<MAX_LESSONS){
+					// Start the next lesson
+					console.log('========================='.green)
+					console.log(`   LESSON #${nLessons} begins`)
+					console.log('========================='.green)
+
+					var bot = Promise.resolve(_agent)
+								.then(ql.start(initState()));
+					return repeatMove(bot,nLessons)
+				}
+				else{
+					// Conclude the learned policy
+					console.log("");
+					console.log(`  ${Object.keys(_agent.policy).length} policies learned`);
+				}
 			}
 			else{
 				// Generate the next step
-				console.log('Generating next step...') // TAODEBUG:
-				return repeatMove(Promise.resolve(_agent))
+				return repeatMove(Promise.resolve(_agent),nLessons)
 			}
 		})
 }
@@ -165,13 +185,13 @@ var score = 0; // Recent score
 console.log('Initial location: '.green);
 render(board);
 
-// TAOTODO: keep playing until the bot dies over and over
+// keep playing until the bot dies over and over
 
 // Lesson time!
 bot = bot.then(ql.start(board));
 
 // Repeat until over
-repeatMove(bot)
+repeatMove(bot,nLessons)
 
 
 
