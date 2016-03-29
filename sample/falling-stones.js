@@ -20,7 +20,7 @@ const actionSet = [ // Character movement
 ];
 
 const BOARD_SIZE = 7;
-const MAX_LESSONS = 15;
+const MAX_LESSONS = 5;
 
 /* 5x5          0
 	┏━━━━━┓
@@ -178,7 +178,8 @@ function repeatMove(agent,nLessons,history){
 					console.log('  [Num moves until it dies]');
 					console.log('  ',history)
 
-					return _agent;
+					// Generalise the model and try again
+					return generalize(_agent,history);
 				}
 			}
 			else{
@@ -186,6 +187,14 @@ function repeatMove(agent,nLessons,history){
 				return repeatMove(Promise.resolve(_agent),nLessons,history)
 			}
 		})
+}
+
+function generalize(agent,history0){
+	console.log('======= GENERALISING THE MODEL ======'.magenta);
+	// Generalise the model
+	ql.generalize('GD')(agent)
+	// Then start over the game
+		//.then()
 }
 
 var bot = ql.newAgent('bot',actionSet,alpha=0.22)

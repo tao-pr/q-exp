@@ -24,7 +24,7 @@ class State{
 	}
 
 	static fromHash(hash){
-		var arr = JSON.stringify('[' + hash.split(',') + ']');
+		var arr = JSON.parse('[' + hash.split(',') + ']');
 		return new State(arr)
 	}
 
