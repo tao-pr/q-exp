@@ -20,7 +20,7 @@ const actionSet = [ // Character movement
 ];
 
 const BOARD_SIZE = 7;
-const MAX_LESSONS = 20;
+const MAX_LESSONS = 150;
 
 /* 5x5          0
 	┏━━━━━┓
@@ -133,13 +133,20 @@ function render(state){
 	console.log(horz);
 }
 
-function repeatMove(agent,nLessons){
+function countMove(agent){
+	if (!agent.move) agent.move = 1;
+	agent.move++;
+	return agent;
+}
+
+function repeatMove(agent,nLessons,history){
 	// Generate next move
 	agent
 		.then(ql.perceiveState)
 		.then(ql.step)
 		.then(ql.perceiveState)
 		.then(ql.learn)
+		.then(countMove)
 		.then(function(_agent){
 			// Over?
 			var _state = _agent.state;
@@ -148,25 +155,33 @@ function repeatMove(agent,nLessons){
 				console.log('❌❌❌ GAME OVER ❌❌❌');
 				nLessons++;
 
+				history.push(_agent.move);
+
 				if (nLessons<MAX_LESSONS){
 					// Start the next lesson
 					console.log('========================='.green)
 					console.log(`   LESSON #${nLessons} begins`)
 					console.log('========================='.green)
 
+					// Reset move before startover
+					_agent.move = 0;
+
 					var bot = Promise.resolve(_agent)
 								.then(ql.start(initState()));
-					return repeatMove(bot,nLessons)
+					return repeatMove(bot,nLessons,history)
 				}
 				else{
 					// Conclude the learned policy
 					console.log("");
 					console.log(`  ${Object.keys(_agent.policy).length} policies learned`);
+					console.log("");
+					console.log('  [Num moves until it dies]');
+					console.log('  ',history)
 				}
 			}
 			else{
 				// Generate the next step
-				return repeatMove(Promise.resolve(_agent),nLessons)
+				return repeatMove(Promise.resolve(_agent),nLessons,history)
 			}
 		})
 }
@@ -191,7 +206,7 @@ render(board);
 bot = bot.then(ql.start(board));
 
 // Repeat until over
-repeatMove(bot,nLessons)
+repeatMove(bot,nLessons,[])
 
 
 
