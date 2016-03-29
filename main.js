@@ -246,6 +246,14 @@ ql.start = function(initState){
 
 
 /**
+ * Perceive and store its own state in the history tree
+ */
+ql.perceiveState = function(agent){
+	agent.history.push({action: null, state: agent.state});
+	return agent;
+}
+
+/**
  * Set the current state
  */
 ql.setState = function(state){
