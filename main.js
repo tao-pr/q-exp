@@ -380,9 +380,9 @@ ql.generalize = function(method){
 			var state  = State.fromHash(hash);
 			// Iterate through each action and fill the space
 			agent.policy[hash].forEach((a,i) => {
-				var reward = agent.policy[hash][a];
+				// `a` = {action: .... , reward: .....}
 				Qa[i].states.push(state);
-				Qa[i].rewards.push(reward);
+				Qa[i].rewards.push(a.reward);
 			})
 		})
 
@@ -391,6 +391,7 @@ ql.generalize = function(method){
 		Qa.forEach((action,i) => {
 			var states = action.states;
 			var rewards = action.rewards;
+
 			var ϴi = Generalizer.fit(states,rewards,maxIters,alpha,method);
 
 			ϴspace[i] = ϴi;
