@@ -20,7 +20,7 @@ const actionSet = [ // Character movement
 ];
 
 const BOARD_SIZE = 7;
-const MAX_LESSONS = 150;
+const MAX_LESSONS = 15;
 
 /* 5x5          0
 	┏━━━━━┓
