@@ -178,8 +178,22 @@ function repeatMove(agent,nLessons,history){
 					console.log('  [Num moves until it dies]');
 					console.log('  ',history)
 
-					// Generalise the model and try again
-					return generalize(_agent,history);
+					// If haven't generalised, do it and 
+					// startover the lesson
+					if (_agent.ϴ){
+						// Conclude
+						var historyBeforeGenl = history.slice(0,MAX_LESSONS);
+						var historyAfterGenl = history.slice(MAX_LESSONS);
+
+						console.log('=============================='.cyan)
+						console.log(' Before generalisation:'.cyan);
+						console.log(historyBeforeGenl);
+						console.log('');
+						console.log(' After generalisation:'.cyan);
+						console.log(historyAfterGenl);
+						return _agent;
+					}
+					else return generalize(_agent,history);
 				}
 			}
 			else{
@@ -194,7 +208,12 @@ function generalize(agent,history0){
 	// Generalise the model
 	ql.generalize('GD')(agent)
 	// Then start over the game
-		//.then()
+		.then(function startOver(_agent){
+			console.log('========== RESTARTING THE GAME ======'.magenta);
+			let agent = Promise.resolve(_agent)
+				.then(ql.start(initState()));
+			return repeatMove(agent,0,history0)
+		})
 }
 
 var bot = ql.newAgent('bot',actionSet,alpha=0.22)
