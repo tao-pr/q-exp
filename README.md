@@ -1,5 +1,7 @@
 # Q-EXP
 
+https://github.com/starcolon/q-exp
+
 [Reinforcement Learning](http://www.cs.indiana.edu/~gasser/Salsa/rl.html) 
 with Q-learning technique for Node.js app. 
 It also provides policy generalisation in-built.
