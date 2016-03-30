@@ -1,6 +1,6 @@
 {
   "name": "q-exp",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Reinforcement learning (Q-Learning) library",
   "main": "main.js",
   "repository": {
