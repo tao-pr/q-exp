@@ -20,7 +20,7 @@ const actionSet = [ // Character movement
 ];
 
 const BOARD_SIZE = 7;
-const MAX_LESSONS = 5;
+const MAX_LESSONS = 40;
 
 /* 5x5          0
 	┏━━━━━┓
@@ -187,10 +187,10 @@ function repeatMove(agent,nLessons,history){
 
 						console.log('=============================='.cyan)
 						console.log(' Before generalisation:'.cyan);
-						console.log(historyBeforeGenl);
+						console.log(historyBeforeGenl.join(','));
 						console.log('');
 						console.log(' After generalisation:'.cyan);
-						console.log(historyAfterGenl);
+						console.log(historyAfterGenl.join(','));
 						return _agent;
 					}
 					else return generalize(_agent,history);
